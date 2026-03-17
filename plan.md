@@ -1,1 +1,1 @@
-hej detta är planen
+The plan is to build a web based one-to-one chat interface with messages stored and encrypted on a server. 
