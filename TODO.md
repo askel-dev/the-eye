@@ -2,4 +2,4 @@
 - Göra en simpel webb-sida
 - Koppla till servern 
 - Enkryptera meddelanden? 
-- Konton 
+- Konton nigger 
