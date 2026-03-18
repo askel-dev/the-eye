@@ -212,6 +212,15 @@ function appendSystemMsg(text, swatchColor = null) {
     scrollToBottom();
 }
 
+function appendSystemMsgHtml(html) {
+    const feed = document.getElementById('message-feed');
+    const el = document.createElement('div');
+    el.className = 'system-msg';
+    el.innerHTML = '// ' + html;
+    feed.appendChild(el);
+    scrollToBottom();
+}
+
 const COMMANDS = {
     clear:  { description: 'Clear the message feed',       handler: cmdClear },
     who:    { description: 'Show online users',             handler: cmdWho },
@@ -219,6 +228,7 @@ const COMMANDS = {
     lock:   { description: 'Lock a message by number',      handler: cmdLock },
     mute:   { description: 'Toggle all sound effects',      handler: cmdMute },
     color:  { description: 'List or set your identity color', handler: cmdColor },
+    top:    { description: 'Show message leaderboard',      handler: cmdTop },
     help:   { description: 'Show available commands',       handler: cmdHelp },
 };
 
@@ -419,6 +429,36 @@ function updateSelfStatus(statusText) {
     if (!el) return;
     el.textContent = statusText || '';
     el.style.display = statusText ? 'block' : 'none';
+}
+
+async function cmdTop() {
+    appendSystemMsg('GLOBAL COMM METRICS: MESSAGES SENT');
+    const { data, error } = await sb.rpc('get_message_counts');
+    if (error || !data || data.length === 0) {
+        appendSystemMsg('NO DATA AVAILABLE');
+        return;
+    }
+    const top = data.slice(0, 10);
+    const maxCount = top[0].total_count;
+    const BAR_WIDTH = 20;
+    const maxName = Math.max(...top.map(r => {
+        const u = allUsers.find(u => u.id === r.sender_id);
+        return (u ? u.username : 'unknown').length;
+    }));
+    const maxDigits = maxCount.toLocaleString().length;
+    top.forEach((row, i) => {
+        const user = allUsers.find(u => u.id === row.sender_id);
+        const name = user ? user.username : 'unknown';
+        const color = getColorHex(user ? user.color_id : 1);
+        const filled = Math.max(1, Math.round((row.total_count / maxCount) * BAR_WIDTH));
+        const empty = BAR_WIDTH - filled;
+        const bar = '▓'.repeat(filled) + '░'.repeat(empty);
+        const rank = `[${i + 1}]`.padEnd(4);
+        const paddedName = name.padEnd(maxName);
+        const count = row.total_count.toLocaleString().padStart(maxDigits);
+        const nameHtml = `<span style="color:${color};font-style:normal">${paddedName}</span>`;
+        appendSystemMsgHtml(`${rank} ${nameHtml} ${bar} ${count}`);
+    });
 }
 
 function cmdHelp() {

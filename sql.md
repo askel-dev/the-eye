@@ -233,3 +233,23 @@ alter table public.profiles
     add column if not exists color_id smallint not null default 1
     constraint color_id_range check (color_id between 1 and 9);
 
+
+-- ============================================
+-- 8. ADD LEADERBOARD RPC FUNCTION
+-- ============================================
+-- Aggregates total message counts per user across both messages and
+-- channel_messages tables. Used by the /top command.
+
+create or replace function get_message_counts()
+returns table(sender_id uuid, total_count bigint)
+language sql security definer as $$
+  select sender_id, count(*) as total_count
+  from (
+    select sender_id from messages
+    union all
+    select sender_id from channel_messages
+  ) combined
+  group by sender_id
+  order by total_count desc;
+$$;
+
