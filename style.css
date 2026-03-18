@@ -273,33 +273,41 @@ h1 {
 
 #self-info {
     border-top: 1px solid #181818;
-    padding: 9px 14px;
+    padding: 8px 14px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     flex-shrink: 0;
     margin-top: auto;
+}
+
+#self-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 #self-info .status-dot {
     position: static;
     top: unset;
-    margin-right: 6px;
-    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 #self-username {
     font-size: 11px;
     letter-spacing: 0.1em;
-    color: #555;
+    color: #505050;
 }
 
 #self-status-text {
     font-size: 10px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: #3a7a5a;
-    padding-left: 14px;
+    padding-left: 16px;
     display: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #logout-btn {
