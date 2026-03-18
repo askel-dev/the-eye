@@ -245,6 +245,18 @@ function renderSkeleton() {
     }
 }
 
+function formatDateLabel(date) {
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return months[date.getMonth()] + ' ' + date.getDate();
+}
+
+function insertDateSeparator(feed, date) {
+    const el = document.createElement('div');
+    el.className = 'date-separator';
+    el.innerHTML = `<span class="date-separator-line"></span><span class="date-separator-label">[ ${formatDateLabel(date)} ]</span><span class="date-separator-line"></span>`;
+    feed.appendChild(el);
+}
+
 function renderMessages(messages) {
     const feed = document.getElementById('message-feed');
     feed.innerHTML = '';
@@ -257,9 +269,20 @@ function renderMessages(messages) {
         : `// CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
     feed.appendChild(sys);
 
+    let lastDate = null;
     for (const msg of messages) {
         const dedupKey = viewMode === 'channel' ? 'ch-' + msg.id : msg.id;
         renderedMsgIds.add(dedupKey);
+
+        if (msg.created_at) {
+            const msgDate = new Date(msg.created_at);
+            const dayStr = msgDate.toDateString();
+            if (lastDate && lastDate !== dayStr) {
+                insertDateSeparator(feed, msgDate);
+            }
+            lastDate = dayStr;
+        }
+
         appendMessage(msg, false);
     }
 
@@ -809,6 +832,70 @@ document.querySelector('.contact-list').addEventListener('click', e => {
         switchContact(el.dataset.userId);
     }
 });
+
+// =============================================
+// KEYBOARD SHORTCUTS — Alt+Up/Down to switch contacts
+// =============================================
+function getContactOrder() {
+    return Array.from(document.querySelectorAll('.contact-list .contact'));
+}
+
+function switchByOffset(offset) {
+    const contacts = getContactOrder();
+    if (contacts.length === 0) return;
+
+    let activeIdx = contacts.findIndex(c => c.classList.contains('active'));
+    if (activeIdx === -1) activeIdx = 0;
+
+    let next = activeIdx + offset;
+    if (next < 0) next = contacts.length - 1;
+    if (next >= contacts.length) next = 0;
+
+    const el = contacts[next];
+    if (el.dataset.channel) {
+        switchToChannel(el.dataset.channel);
+    } else if (el.dataset.userId) {
+        switchContact(el.dataset.userId);
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if (!currentUser) return;
+
+    // Alt+Up / Alt+Down to switch contacts
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault();
+        switchByOffset(e.key === 'ArrowUp' ? -1 : 1);
+        return;
+    }
+
+    // Ctrl+J / Ctrl+K to switch contacts
+    if (e.ctrlKey && (e.key === 'j' || e.key === 'k')) {
+        e.preventDefault();
+        switchByOffset(e.key === 'k' ? -1 : 1);
+        return;
+    }
+
+    // Escape to close help modal
+    if (e.key === 'Escape') {
+        closeHelpModal();
+    }
+});
+
+// =============================================
+// HELP MODAL
+// =============================================
+function openHelpModal() {
+    document.getElementById('help-modal').classList.remove('hidden');
+}
+
+function closeHelpModal() {
+    document.getElementById('help-modal').classList.add('hidden');
+}
+
+document.getElementById('help-btn').addEventListener('click', openHelpModal);
+document.getElementById('help-modal-backdrop').addEventListener('click', closeHelpModal);
+document.getElementById('help-close-btn').addEventListener('click', closeHelpModal);
 
 //=============================================
 // BOOT

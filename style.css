@@ -331,6 +331,40 @@ h1 {
     text-overflow: ellipsis;
 }
 
+/* === Help Button === */
+#help-btn {
+    background: none;
+    border: none;
+    border-top: 1px solid #181818;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: #303030;
+    cursor: pointer;
+    padding: 11px 14px;
+    text-align: left;
+    width: 100%;
+    transition: color 0.15s;
+    flex-shrink: 0;
+}
+
+#help-btn:hover {
+    color: #888;
+}
+
+#help-btn .bracket {
+    display: inline-block;
+    transition: transform 0.15s;
+}
+
+#help-btn:hover .bracket.left {
+    transform: translateX(-3px);
+}
+
+#help-btn:hover .bracket.right {
+    transform: translateX(3px);
+}
+
 #logout-btn {
     background: none;
     border: none;
@@ -541,27 +575,27 @@ h1 {
 }
 
 .message .msg-time {
-    color: #2e2e2e;
+    color: #4a4a4a;
 }
 
 .message .msg-sender {
-    color: #585858;
+    color: #7a9a6a;
     margin-left: 4px;
 }
 
 .message.self .msg-sender {
-    color: #4a6a8a;
+    color: #4a8a9a;
 }
 
 .msg-admin-tag {
     font-size: 10px;
-    color: #7a4a4a;
+    color: #9a6a6a;
     margin-left: 5px;
     letter-spacing: 0.06em;
 }
 
 .message .msg-sep {
-    color: #2a2a2a;
+    color: #3a3a3a;
     margin: 0 5px;
 }
 
@@ -575,10 +609,32 @@ h1 {
 
 .system-msg {
     font-size: 11px;
-    color: #2a5040;
+    color: #8a7a3a;
     letter-spacing: 0.1em;
     padding: 6px 0 10px;
     animation: emerge-up 0.3s ease both;
+    font-style: italic;
+}
+
+/* === Date Separators === */
+.date-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0 6px;
+}
+
+.date-separator-line {
+    flex: 1;
+    height: 1px;
+    background: #1c1c1c;
+}
+
+.date-separator-label {
+    font-size: 10px;
+    color: #3a3a3a;
+    letter-spacing: 0.15em;
+    white-space: nowrap;
 }
 
 /* === Typing Indicator === */
@@ -666,6 +722,96 @@ h1 {
     flex-shrink: 0;
 }
 
+
+/* === Help Modal === */
+#help-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#help-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+#help-modal-content {
+    position: relative;
+    background: #0f0f0f;
+    border: 1px solid #1c1c1c;
+    padding: 24px 28px;
+    max-width: 380px;
+    width: 90%;
+    z-index: 1;
+}
+
+.help-title {
+    font-size: 11px;
+    color: #4a4a4a;
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+}
+
+.help-title + .help-title {
+    margin-top: 20px;
+}
+
+.help-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.help-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.help-key {
+    color: #7a9a6a;
+    white-space: nowrap;
+    min-width: 130px;
+}
+
+.help-desc {
+    color: #5a5a5a;
+}
+
+#help-close-btn {
+    background: none;
+    border: none;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: #303030;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 20px;
+    transition: color 0.15s;
+}
+
+#help-close-btn:hover {
+    color: #888;
+}
+
+#help-close-btn .bracket {
+    display: inline-block;
+    transition: transform 0.15s;
+}
+
+#help-close-btn:hover .bracket.left {
+    transform: translateX(-3px);
+}
+
+#help-close-btn:hover .bracket.right {
+    transform: translateX(3px);
+}
 
 /* === Sidebar Toggle Button (hidden on desktop) === */
 #sidebar-toggle {
