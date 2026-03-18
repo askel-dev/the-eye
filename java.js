@@ -1,6 +1,24 @@
+// Set white favicon using canvas + filter
+(function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = function() {
+        ctx.filter = 'brightness(0) invert(1)';
+        ctx.drawImage(img, 0, 0, 32, 32);
+        const link = document.querySelector("link[rel='icon']") || document.createElement('link');
+        link.rel = 'icon';
+        link.href = canvas.toDataURL();
+        document.head.appendChild(link);
+    };
+    img.src = 'assets/logo.png';
+})();
+
 const SoundBtn = document.getElementById('SoundBtn');
 SoundBtn.addEventListener('click', () => {
-    const audio = new Audio('Audio/fears-to-fathom-notification-sound.mp3');
+    const audio = new Audio('assets/notif.mp3');
     audio.play();
 });
 

@@ -1,0 +1,8 @@
+Project URL: 
+https://afuwppfrljzmnbndizxz.supabase.co
+
+Anon Key:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmdXdwcGZybGp6bW5ibmRpenh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDA4MzgsImV4cCI6MjA4OTQxNjgzOH0.-EK1da5r3n38YVs6pPPKMWiyWyzsVdGlUwX5iygY5LA
+
+Publishable Key:
+sb_publishable_xzvqXDObVVr0S-O_W6CfuQ_fyb0aIwO
