@@ -674,6 +674,7 @@ async function switchContact(userId) {
     });
 
     updateHeader(contact, onlineIds.has(userId));
+    closeSidebar();
     await loadMessages(userId);
 }
 
@@ -705,6 +706,7 @@ async function switchToChannel(channelName) {
     const dot = document.getElementById('chat-status-dot');
     dot.className = 'status-dot online-dot';
 
+    closeSidebar();
     await loadChannelMessages(channelName);
 }
 
@@ -715,6 +717,17 @@ async function switchToChannel(channelName) {
 document.addEventListener('click', unlockAudio, { once: true });
 document.addEventListener('keydown', unlockAudio, { once: true });
 document.addEventListener('touchstart', unlockAudio, { once: true });
+
+// Sidebar toggle (mobile)
+function closeSidebar() {
+    document.body.classList.remove('sidebar-open');
+}
+
+document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-open');
+});
+
+document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
 
 document.getElementById('login-btn').addEventListener('click', handleLogin);
 
