@@ -34,6 +34,7 @@ let allUsers        = [];        // [{ id, username }, ...]
 let onlineIds       = new Set(); // user IDs currently online
 let realtimeChannel = null;
 let presenceChannel = null;
+let profilesChannel = null;
 let renderedMsgIds  = new Set(); // dedup for self-echo
 
 // =============================================
@@ -215,6 +216,7 @@ async function enterChat(userId, username) {
 
     renderContacts();
     subscribeToMessages();
+    subscribeToProfiles();
     joinPresence();
 
     // Auto-select first contact
@@ -347,9 +349,26 @@ async function handleIncomingMessage(payload) {
     }
 }
 
+function subscribeToProfiles() {
+    profilesChannel = sb
+        .channel('profiles-inserts')
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'profiles' },
+            (payload) => {
+                const newUser = { id: payload.new.id, username: payload.new.username };
+                if (!allUsers.find(u => u.id === newUser.id)) {
+                    allUsers.push(newUser);
+                    allUsers.sort((a, b) => a.username.localeCompare(b.username));
+                    renderContacts();
+                }
+            })
+        .subscribe();
+}
+
 function unsubscribeAll() {
     if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
     if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
+    if (profilesChannel) { sb.removeChannel(profilesChannel); profilesChannel = null; }
 }
 
 // =============================================
