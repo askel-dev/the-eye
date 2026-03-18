@@ -496,6 +496,7 @@ h1 {
     flex-direction: column;
     overflow: hidden;
     min-width: 0;
+    position: relative;
 }
 
 #chat-header {
@@ -635,6 +636,30 @@ h1 {
     color: #3a3a3a;
     letter-spacing: 0.15em;
     white-space: nowrap;
+}
+
+/* === New Message Indicator === */
+#new-msg-indicator {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0a0a0a;
+    border: 1px solid #2a5a45;
+    color: #4a9a7a;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 6px 16px;
+    cursor: pointer;
+    z-index: 50;
+    transition: opacity 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+#new-msg-indicator:hover {
+    color: #6acaaa;
+    border-color: #3a7a5a;
 }
 
 /* === Typing Indicator === */

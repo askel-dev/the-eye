@@ -42,6 +42,14 @@ let notifAudio      = new Audio('assets/notif.mp3');
 let viewMode        = 'dm';       // 'dm' or 'channel'
 let activeChannel   = null;       // e.g. 'GLOBAL'
 let channelRealtimeChannel = null;
+let inputHistory        = [];       // sent messages (oldest → newest)
+let inputHistoryIdx     = -1;       // -1 = not browsing history
+let inputHistoryDraft   = '';       // stash of unsent text when entering history
+let isUserAtBottom      = true;     // auto-scroll tracking
+let newMsgCount         = 0;        // unread count while scrolled up
+let typingChannel       = null;     // broadcast channel for typing indicators
+let typingTimeout       = null;     // timeout to hide remote typing
+let lastTypingSent      = 0;        // throttle outgoing typing events
 
 function unlockAudio() {
     if (audioUnlocked) return;
@@ -72,9 +80,96 @@ function escapeHtml(text) {
         .replace(/>/g, '&gt;');
 }
 
-function scrollToBottom() {
+function scrollToBottom(force = false) {
     const feed = document.getElementById('message-feed');
-    feed.scrollTop = feed.scrollHeight;
+    if (force || isUserAtBottom) {
+        feed.scrollTop = feed.scrollHeight;
+        resetNewMsgIndicator();
+    }
+}
+
+function checkIfAtBottom() {
+    const feed = document.getElementById('message-feed');
+    // Within 40px of the bottom counts as "at bottom"
+    isUserAtBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
+    if (isUserAtBottom) resetNewMsgIndicator();
+}
+
+function showNewMsgIndicator() {
+    newMsgCount++;
+    const indicator = document.getElementById('new-msg-indicator');
+    document.getElementById('new-msg-count').textContent = newMsgCount;
+    indicator.classList.remove('hidden');
+}
+
+function resetNewMsgIndicator() {
+    newMsgCount = 0;
+    const indicator = document.getElementById('new-msg-indicator');
+    if (indicator) indicator.classList.add('hidden');
+}
+
+// =============================================
+// 3c. TYPING INDICATORS
+// =============================================
+function subscribeToTyping() {
+    typingChannel = sb
+        .channel('typing-indicators')
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (!currentUser || payload.user_id === currentUser.id) return;
+
+            // DM mode: only show if the typer is the active contact
+            if (viewMode === 'dm') {
+                if (!activeContact || payload.user_id !== activeContact.id) return;
+                if (payload.context_type !== 'dm') return;
+            }
+            // Channel mode: only show if same channel
+            if (viewMode === 'channel') {
+                if (payload.context_type !== 'channel' || payload.context_id !== activeChannel) return;
+            }
+
+            showTypingIndicator(payload.username);
+        })
+        .subscribe();
+}
+
+function broadcastTyping() {
+    if (!typingChannel || !currentUser) return;
+
+    const now = Date.now();
+    if (now - lastTypingSent < 2000) return; // throttle to once per 2s
+    lastTypingSent = now;
+
+    const payload = {
+        user_id: currentUser.id,
+        username: currentUser.username,
+    };
+
+    if (viewMode === 'channel' && activeChannel) {
+        payload.context_type = 'channel';
+        payload.context_id = activeChannel;
+    } else if (viewMode === 'dm' && activeContact) {
+        payload.context_type = 'dm';
+        payload.context_id = activeContact.id;
+    } else {
+        return;
+    }
+
+    typingChannel.send({ type: 'broadcast', event: 'typing', payload });
+}
+
+function showTypingIndicator(username) {
+    const el = document.getElementById('typing-indicator');
+    el.innerHTML = `${escapeHtml(username)} is typing<span class="blink-cursor">_</span>`;
+    el.classList.remove('hidden');
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(hideTypingIndicator, 3000);
+}
+
+function hideTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    el.classList.add('hidden');
+    clearTimeout(typingTimeout);
 }
 
 // =============================================
@@ -228,7 +323,11 @@ function appendMessage(msg, animate = true) {
         `<span class="msg-text">${escapeHtml(msg.body)}</span>`;
 
     feed.appendChild(el);
-    scrollToBottom();
+    if (isUserAtBottom) {
+        scrollToBottom();
+    } else if (animate) {
+        showNewMsgIndicator();
+    }
 }
 
 function renderSkeleton() {
@@ -286,7 +385,8 @@ function renderMessages(messages) {
         appendMessage(msg, false);
     }
 
-    scrollToBottom();
+    isUserAtBottom = true;
+    scrollToBottom(true);
 }
 
 function updateContactStatus(userId, isOnline) {
@@ -388,6 +488,7 @@ async function enterChat(userId, username) {
     subscribeToMessages();
     subscribeToProfiles();
     subscribeToChannelMessages();
+    subscribeToTyping();
     joinPresence();
 
     // Auto-select first contact
@@ -510,6 +611,13 @@ async function sendMessage() {
     const input = document.getElementById('message-input');
     const body = input.value.trim();
     if (!body) return;
+
+    // Push to input history (cap at 50)
+    inputHistory.push(body);
+    if (inputHistory.length > 50) inputHistory.shift();
+    inputHistoryIdx = -1;
+    inputHistoryDraft = '';
+
     if (await handleSlashCommand(body)) { input.value = ''; return; }
 
     if (viewMode === 'channel' && activeChannel) {
@@ -574,6 +682,7 @@ async function handleIncomingMessage(payload) {
     if (cached) cached.push(msg);
 
     if (isActiveConversation) {
+        hideTypingIndicator();
         appendMessage(msg);
     } else {
         // Play notification sound for incoming messages from non-active contacts
@@ -655,6 +764,7 @@ function handleIncomingChannelMessage(payload) {
     if (chCached) chCached.push(msg);
 
     if (viewMode === 'channel' && activeChannel === msg.channel) {
+        hideTypingIndicator();
         appendMessage(msg);
     } else {
         // Play notification for messages from others
@@ -684,6 +794,7 @@ function unsubscribeAll() {
     if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
     if (profilesChannel) { sb.removeChannel(profilesChannel); profilesChannel = null; }
     if (channelRealtimeChannel) { sb.removeChannel(channelRealtimeChannel); channelRealtimeChannel = null; }
+    if (typingChannel) { sb.removeChannel(typingChannel); typingChannel = null; }
 }
 
 // =============================================
@@ -734,6 +845,7 @@ async function switchContact(userId) {
     viewMode = 'dm';
     activeChannel = null;
     activeContact = contact;
+    hideTypingIndicator();
 
     // Clear unread badge
     const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
@@ -759,6 +871,7 @@ async function switchToChannel(channelName) {
     viewMode = 'channel';
     activeChannel = channelName;
     activeContact = null;
+    hideTypingIndicator();
 
     // Clear unread badge on channel entry
     const el = document.querySelector(`.contact[data-channel="${channelName}"]`);
@@ -804,14 +917,62 @@ document.getElementById('sidebar-toggle').addEventListener('click', () => {
 
 document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
 
+// Auto-scroll tracking
+document.getElementById('message-feed').addEventListener('scroll', checkIfAtBottom);
+
+// New message indicator click — snap to bottom
+document.getElementById('new-msg-indicator').addEventListener('click', () => {
+    isUserAtBottom = true;
+    scrollToBottom(true);
+});
+
 document.getElementById('login-btn').addEventListener('click', handleLogin);
 
 document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
 document.getElementById('send-btn').addEventListener('click', sendMessage);
 
+document.getElementById('message-input').addEventListener('input', () => {
+    if (document.getElementById('message-input').value.trim()) broadcastTyping();
+});
+
 document.getElementById('message-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') { sendMessage(); return; }
+
+    const input = e.target;
+
+    // Up arrow — browse history backwards (only when input is empty or already browsing)
+    if (e.key === 'ArrowUp' && !e.altKey && !e.ctrlKey) {
+        if (inputHistory.length === 0) return;
+        if (input.value && inputHistoryIdx === -1) return; // has unsaved typed text, don't hijack
+
+        e.preventDefault();
+        if (inputHistoryIdx === -1) {
+            // entering history mode — stash current text
+            inputHistoryDraft = input.value;
+            inputHistoryIdx = inputHistory.length - 1;
+        } else if (inputHistoryIdx > 0) {
+            inputHistoryIdx--;
+        }
+        input.value = inputHistory[inputHistoryIdx];
+        return;
+    }
+
+    // Down arrow — browse history forwards
+    if (e.key === 'ArrowDown' && !e.altKey && !e.ctrlKey) {
+        if (inputHistoryIdx === -1) return; // not in history mode
+
+        e.preventDefault();
+        if (inputHistoryIdx < inputHistory.length - 1) {
+            inputHistoryIdx++;
+            input.value = inputHistory[inputHistoryIdx];
+        } else {
+            // exit history mode — restore draft
+            inputHistoryIdx = -1;
+            input.value = inputHistoryDraft;
+        }
+        return;
+    }
 });
 
 document.getElementById('password').addEventListener('keydown', e => {
@@ -879,7 +1040,24 @@ document.addEventListener('keydown', e => {
     // Escape to close help modal
     if (e.key === 'Escape') {
         closeHelpModal();
+        return;
     }
+
+    // Global typing capture — any printable key refocuses the message input
+    const input = document.getElementById('message-input');
+    if (document.activeElement === input) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key.length !== 1) return; // ignore non-printable keys (Shift, Tab, etc.)
+
+    // Don't capture if user is in the login form
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    // Don't capture if help modal is open
+    if (!document.getElementById('help-modal').classList.contains('hidden')) return;
+
+    input.focus();
+    // The keystroke will now naturally land in the focused input
 });
 
 // =============================================
