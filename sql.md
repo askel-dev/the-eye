@@ -226,10 +226,10 @@ create policy "channel_messages: allow updates for locking"
 -- ============================================
 -- 7. ADD COLOR_ID TO PROFILES
 -- ============================================
--- Stores the user's chosen identity color as a curated palette index (1-8).
--- Defaults to 1 (Amber CRT) for all existing users.
+-- Stores the user's chosen identity color as a curated palette index (1-9).
+-- Defaults to 1 (Standard Gray) for all existing users.
 
 alter table public.profiles
     add column if not exists color_id smallint not null default 1
-    constraint color_id_range check (color_id between 1 and 8);
+    constraint color_id_range check (color_id between 1 and 9);
 

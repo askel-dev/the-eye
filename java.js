@@ -27,14 +27,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Curated identity color palette — terminal-safe, readable on dark backgrounds
 const IDENTITY_COLORS = [
-    { id: 1, name: 'Amber CRT',      hex: '#FFB347' },
-    { id: 2, name: 'Cyber Cyan',     hex: '#00E5CC' },
-    { id: 3, name: 'Phosphor Green', hex: '#39FF14' },
-    { id: 4, name: 'Muted Magenta',  hex: '#C06080' },
-    { id: 5, name: 'Dusty Rose',     hex: '#C97B8A' },
-    { id: 6, name: 'Slate Blue',     hex: '#7B9FCF' },
-    { id: 7, name: 'Warm Ivory',     hex: '#E8DCC8' },
-    { id: 8, name: 'Soft Coral',     hex: '#E8886A' },
+    { id: 1, name: 'Standard Gray',  hex: '#7a9a6a' },
+    { id: 2, name: 'Amber CRT',      hex: '#FFB347' },
+    { id: 3, name: 'Cyber Cyan',     hex: '#00E5CC' },
+    { id: 4, name: 'Phosphor Green', hex: '#39FF14' },
+    { id: 5, name: 'Muted Magenta',  hex: '#C06080' },
+    { id: 6, name: 'Dusty Rose',     hex: '#C97B8A' },
+    { id: 7, name: 'Slate Blue',     hex: '#7B9FCF' },
+    { id: 8, name: 'Warm Ivory',     hex: '#E8DCC8' },
+    { id: 9, name: 'Soft Coral',     hex: '#E8886A' },
 ];
 
 function getColorHex(colorId) {
@@ -468,7 +469,7 @@ async function cmdColor(args) {
         return;
     }
 
-    appendSystemMsg('USAGE: /color list  OR  /color set [1-8]');
+    appendSystemMsg(`USAGE: /color list  OR  /color set [1-${IDENTITY_COLORS.length}]`);
 }
 
 function cmdMute() {
