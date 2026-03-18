@@ -797,7 +797,7 @@ async function loadMessages(contactId) {
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${me},recipient_id.eq.${them}),and(sender_id.eq.${them},recipient_id.eq.${me})`)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(200);
 
     if (error) {
@@ -805,7 +805,7 @@ async function loadMessages(contactId) {
         return;
     }
 
-    const rawMessages = data || [];
+    const rawMessages = (data || []).reverse();
     const clearKey = `clear-${currentUser.id}-dm-${contactId}`;
     const clearTime = parseInt(localStorage.getItem(clearKey) || '0', 10);
     
@@ -842,7 +842,7 @@ async function loadChannelMessages(channelName) {
         .from('channel_messages')
         .select('*')
         .eq('channel', channelName)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(200);
 
     if (error) {
@@ -850,7 +850,7 @@ async function loadChannelMessages(channelName) {
         return;
     }
 
-    const rawMessages = data || [];
+    const rawMessages = (data || []).reverse();
     const clearKey = `clear-${currentUser.id}-ch-${channelName}`;
     const clearTime = parseInt(localStorage.getItem(clearKey) || '0', 10);
 
