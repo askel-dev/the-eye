@@ -338,6 +338,11 @@ async function handleIncomingMessage(payload) {
     if (isActiveConversation) {
         appendMessage(msg);
     } else {
+        // Play notification sound for incoming messages from non-active contacts
+        if (msg.sender_id !== currentUser.id) {
+            new Audio('assets/notif.mp3').play().catch(() => {});
+        }
+
         // Unread badge on sidebar contact
         const contactId = msg.sender_id === currentUser.id ? msg.recipient_id : msg.sender_id;
         const el = document.querySelector(`.contact[data-user-id="${contactId}"]`);
@@ -467,12 +472,7 @@ document.querySelector('.contact-list').addEventListener('click', e => {
     if (el && el.dataset.userId) switchContact(el.dataset.userId);
 });
 
-// Sound button
-document.getElementById('SoundBtn').addEventListener('click', () => {
-    new Audio('assets/notif.mp3').play();
-});
-
-// =============================================
+//=============================================
 // BOOT
 // =============================================
 restoreSession();
