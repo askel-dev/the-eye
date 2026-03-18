@@ -27,20 +27,20 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Curated identity color palette — terminal-safe, readable on dark backgrounds
 const IDENTITY_COLORS = [
-    { id: 1, name: 'Standard Gray',  hex: '#7a9a6a' },
-    { id: 2, name: 'Amber CRT',      hex: '#FFB347' },
-    { id: 3, name: 'Cyber Cyan',     hex: '#00E5CC' },
+    { id: 1, name: 'Sage',           hex: '#8A9A7A' },
+    { id: 2, name: 'Warm Amber',     hex: '#C49A6A' },
+    { id: 3, name: 'Seafoam',        hex: '#6AADA0' },
     { id: 4, name: 'Phosphor Green', hex: '#39FF14' },
-    { id: 5, name: 'Muted Magenta',  hex: '#C06080' },
+    { id: 5, name: 'Mauve',          hex: '#A8687A' },
     { id: 6, name: 'Dusty Rose',     hex: '#C97B8A' },
-    { id: 7, name: 'Slate Blue',     hex: '#7B9FCF' },
-    { id: 8, name: 'Warm Ivory',     hex: '#E8DCC8' },
-    { id: 9, name: 'Soft Coral',     hex: '#E8886A' },
+    { id: 7, name: 'Steel',          hex: '#7A94B0' },
+    { id: 8, name: 'Sand',           hex: '#C8BCA8' },
+    { id: 9, name: 'Terracotta',     hex: '#B8806E' },
 ];
 
 function getColorHex(colorId) {
     const entry = IDENTITY_COLORS.find(c => c.id === colorId);
-    return entry ? entry.hex : '#7a9a6a'; // fallback = original sender green
+    return entry ? entry.hex : '#8A9A7A'; // fallback = Sage (id 1)
 }
 
 // =============================================
