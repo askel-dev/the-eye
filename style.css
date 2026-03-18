@@ -331,8 +331,8 @@ h1 {
     text-overflow: ellipsis;
 }
 
-/* === Help Button === */
-#help-btn {
+/* === Sidebar Buttons === */
+.sidebar-btn {
     background: none;
     border: none;
     border-top: 1px solid #181818;
@@ -348,54 +348,71 @@ h1 {
     flex-shrink: 0;
 }
 
-#help-btn:hover {
+.sidebar-btn:hover {
     color: #888;
 }
 
-#help-btn .bracket {
+.sidebar-btn .bracket {
     display: inline-block;
     transition: transform 0.15s;
 }
 
-#help-btn:hover .bracket.left {
+.sidebar-btn:hover .bracket.left {
     transform: translateX(-3px);
 }
 
-#help-btn:hover .bracket.right {
+.sidebar-btn:hover .bracket.right {
     transform: translateX(3px);
 }
 
-#logout-btn {
-    background: none;
-    border: none;
-    border-top: 1px solid #181818;
-    font-family: 'Share Tech Mono', 'Courier New', monospace;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    color: #303030;
-    cursor: pointer;
-    padding: 11px 14px;
-    text-align: left;
-    width: 100%;
-    transition: color 0.15s;
+/* Audio toggle specific sidebar styling */
+#audio-toggle.muted {
+    color: #7a3a3a;
+}
+
+#audio-toggle.muted:hover {
+    color: #aa4a4a;
+}
+
+/* === Contact Filter === */
+.contact-filter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-bottom: 1px solid #181818;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: #0a0a0a;
+    z-index: 2;
+}
+
+.contact-filter-prefix {
+    color: #3a7a5a;
+    font-size: 12px;
     flex-shrink: 0;
 }
 
-#logout-btn:hover {
-    color: #888;
+#contact-filter {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 12px;
+    color: #9a9a9a;
+    caret-color: #9a9a9a;
+    letter-spacing: 0.05em;
+    min-width: 0;
 }
 
-#logout-btn .bracket {
-    display: inline-block;
-    transition: transform 0.15s;
+#contact-filter::placeholder {
+    color: #2e2e2e;
 }
 
-#logout-btn:hover .bracket.left {
-    transform: translateX(-3px);
-}
-
-#logout-btn:hover .bracket.right {
-    transform: translateX(3px);
+#contact-filter:focus {
+    caret-shape: block;
 }
 
 .contact-list {

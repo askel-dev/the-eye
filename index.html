@@ -33,6 +33,10 @@
                 <img src="assets/logo.png" alt="Logo" class="sidebar-logo" />
                 <span>// CONTACTS</span>
             </div>
+            <div class="contact-filter-wrap">
+                <span class="contact-filter-prefix">&gt;</span>
+                <input type="text" id="contact-filter" placeholder="filter_" autocomplete="off" spellcheck="false">
+            </div>
             <div class="contact-list"></div>
             <div id="self-info">
                 <div id="self-info-row">
@@ -41,8 +45,9 @@
                 </div>
                 <span id="self-status-text"></span>
             </div>
-            <button id="help-btn"><span class="bracket left">[</span>&nbsp;?&nbsp;<span class="bracket right">]</span></button>
-            <button id="logout-btn"><span class="bracket left">[</span>&nbsp;EXIT<span class="bracket right">]</span></button>
+            <button id="audio-toggle" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;<span id="audio-toggle-text">AUDIO: ON</span><span class="bracket right">]</span></button>
+            <button id="help-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;?&nbsp;<span class="bracket right">]</span></button>
+            <button id="logout-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;EXIT<span class="bracket right">]</span></button>
         </div>
 
         <div id="chat-main">

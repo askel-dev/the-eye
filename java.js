@@ -38,6 +38,7 @@ let profilesChannel = null;
 let renderedMsgIds  = new Set(); // dedup for self-echo
 let conversationCache = new Map(); // userId|channelName → messages[]
 let audioUnlocked   = false;
+let isMuted         = false;
 let notifAudio      = new Audio('assets/notif.mp3');
 let viewMode        = 'dm';       // 'dm' or 'channel'
 let activeChannel   = null;       // e.g. 'GLOBAL'
@@ -64,7 +65,7 @@ function unlockAudio() {
 }
 
 function playNotif() {
-    if (!audioUnlocked) return;
+    if (!audioUnlocked || isMuted) return;
     notifAudio.currentTime = 0;
     notifAudio.play().catch(() => {});
 }
@@ -192,6 +193,7 @@ const COMMANDS = {
     who:    { description: 'Show online users',        handler: cmdWho },
     status: { description: 'Set your status text',     handler: cmdStatus },
     lock:   { description: 'Lock a message by number', handler: cmdLock },
+    mute:   { description: 'Toggle all sound effects', handler: cmdMute },
     help:   { description: 'Show available commands',  handler: cmdHelp },
 };
 
@@ -398,6 +400,25 @@ function cmdHelp() {
     appendSystemMsg('AVAILABLE COMMANDS:');
     for (const [name, cmd] of Object.entries(COMMANDS)) {
         appendSystemMsg('  /' + name + ' — ' + cmd.description);
+    }
+}
+
+function cmdMute() {
+    toggleMute();
+    appendSystemMsg(isMuted ? 'AUDIO MUTED' : 'AUDIO UNMUTED');
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    const btn = document.getElementById('audio-toggle');
+    const textSpan = document.getElementById('audio-toggle-text');
+    if (!btn || !textSpan) return;
+    if (isMuted) {
+        textSpan.textContent = 'AUDIO: OFF';
+        btn.classList.add('muted');
+    } else {
+        textSpan.textContent = 'AUDIO: ON';
+        btn.classList.remove('muted');
     }
 }
 
@@ -1173,6 +1194,12 @@ document.addEventListener('click', unlockAudio, { once: true });
 document.addEventListener('keydown', unlockAudio, { once: true });
 document.addEventListener('touchstart', unlockAudio, { once: true });
 
+// Audio toggle
+const audioToggleBtn = document.getElementById('audio-toggle');
+if (audioToggleBtn) {
+    audioToggleBtn.addEventListener('click', toggleMute);
+}
+
 // Sidebar toggle (mobile)
 function closeSidebar() {
     document.body.classList.remove('sidebar-open');
@@ -1303,10 +1330,52 @@ document.querySelector('.contact-list').addEventListener('click', e => {
 });
 
 // =============================================
+// CONTACT FILTER
+// =============================================
+function applyContactFilter(query) {
+    const q = query.trim().toLowerCase();
+    const contacts = document.querySelectorAll('.contact-list .contact');
+    let channelVisible = false;
+
+    contacts.forEach(el => {
+        const nameEl = el.querySelector('.contact-name');
+        const name = nameEl ? nameEl.textContent.toLowerCase() : '';
+        const visible = !q || name.includes(q);
+        el.style.display = visible ? '' : 'none';
+        if (el.dataset.channel) channelVisible = visible;
+    });
+
+    // Show/hide the separator that sits right after the channel entry
+    const sep = document.querySelector('.contact-list .channel-separator');
+    if (sep) sep.style.display = channelVisible ? '' : 'none';
+}
+
+const contactFilterInput = document.getElementById('contact-filter');
+if (contactFilterInput) {
+    contactFilterInput.addEventListener('input', () => {
+        applyContactFilter(contactFilterInput.value);
+    });
+
+    contactFilterInput.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            contactFilterInput.value = '';
+            applyContactFilter('');
+            contactFilterInput.blur();
+        }
+        // Enter — focus message input (quick switch after filtering)
+        if (e.key === 'Enter') {
+            document.getElementById('message-input').focus();
+        }
+    });
+}
+
+
+// =============================================
 // KEYBOARD SHORTCUTS — Alt+Up/Down to switch contacts
 // =============================================
 function getContactOrder() {
-    return Array.from(document.querySelectorAll('.contact-list .contact'));
+    return Array.from(document.querySelectorAll('.contact-list .contact'))
+        .filter(c => c.style.display !== 'none');
 }
 
 function switchByOffset(offset) {
