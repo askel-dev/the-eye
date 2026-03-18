@@ -327,6 +327,30 @@ function cmdClear() {
         }
     });
 
+    let latestMsgTime = 0;
+    const cacheKey = viewMode === 'channel' ? 'ch:' + activeChannel : (activeContact ? activeContact.id : null);
+    if (cacheKey) {
+        const cached = conversationCache.get(cacheKey);
+        if (cached && cached.length > 0) {
+            for (let i = cached.length - 1; i >= 0; i--) {
+                if (cached[i].created_at) {
+                    latestMsgTime = new Date(cached[i].created_at).getTime();
+                    break;
+                }
+            }
+        }
+        
+        if (cached) {
+            const lockType = viewMode === 'channel' ? 'ch' : 'dm';
+            const filteredCached = cached.filter(msg => msg.locked || lockedMessages.has(lockType + ':' + msg.id));
+            conversationCache.set(cacheKey, filteredCached);
+        }
+    }
+    
+    const clearTime = latestMsgTime > 0 ? latestMsgTime + 1 : Date.now();
+    const clearKeyStr = viewMode === 'channel' ? `clear-${currentUser.id}-ch-${activeChannel}` : `clear-${currentUser.id}-dm-${activeContact.id}`;
+    localStorage.setItem(clearKeyStr, clearTime.toString());
+
     appendSystemMsg(locked.length > 0
         ? `FEED CLEARED — ${locked.length} LOCKED MESSAGE${locked.length > 1 ? 'S' : ''} PRESERVED`
         : 'FEED CLEARED');
@@ -772,7 +796,17 @@ async function loadMessages(contactId) {
         return;
     }
 
-    const messages = data || [];
+    const rawMessages = data || [];
+    const clearKey = `clear-${currentUser.id}-dm-${contactId}`;
+    const clearTime = parseInt(localStorage.getItem(clearKey) || '0', 10);
+    
+    const messages = rawMessages.filter(msg => {
+        const isLocked = msg.locked || lockedMessages.has('dm:' + msg.id);
+        if (isLocked) return true;
+        if (!msg.created_at) return true;
+        return new Date(msg.created_at).getTime() >= clearTime;
+    });
+
     for (const msg of messages) {
         const sender = allUsers.find(u => u.id === msg.sender_id);
         msg.sender = sender ? { username: sender.username } : { username: '???' };
@@ -807,7 +841,17 @@ async function loadChannelMessages(channelName) {
         return;
     }
 
-    const messages = data || [];
+    const rawMessages = data || [];
+    const clearKey = `clear-${currentUser.id}-ch-${channelName}`;
+    const clearTime = parseInt(localStorage.getItem(clearKey) || '0', 10);
+
+    const messages = rawMessages.filter(msg => {
+        const isLocked = msg.locked || lockedMessages.has('ch:' + msg.id);
+        if (isLocked) return true;
+        if (!msg.created_at) return true;
+        return new Date(msg.created_at).getTime() >= clearTime;
+    });
+
     for (const msg of messages) {
         const sender = allUsers.find(u => u.id === msg.sender_id);
         msg.sender = sender ? { username: sender.username } : { username: '???' };

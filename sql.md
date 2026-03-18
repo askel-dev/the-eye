@@ -191,3 +191,34 @@ $$;
 alter table public.profiles
     add column if not exists status_text text default null
     constraint status_text_length check (char_length(trim(status_text)) <= 100);
+
+-- ============================================
+-- 6. ADD LOCKED MESSAGE FUNCTIONALITY
+-- ============================================
+-- Adds the `locked` column to messages and channel_messages tables.
+-- Updates RLS policies to allow updating the locked state.
+-- Sets replica identity to FULL so realtime gets the payload.old state.
+
+alter table public.messages 
+    add column if not exists locked boolean not null default false;
+
+alter table public.channel_messages 
+    add column if not exists locked boolean not null default false;
+
+-- Required for realtime subscriptions to receive payload.old
+alter table public.messages replica identity full;
+alter table public.channel_messages replica identity full;
+
+-- Drop strict 'no updates' policies to allow locking
+drop policy if exists "messages: no updates" on public.messages;
+drop policy if exists "channel_messages: no updates" on public.channel_messages;
+
+-- Create policies to allow updates (specifically for toggling locked state)
+create policy "messages: allow updates for locking"
+    on public.messages for update to authenticated
+    using (true);
+
+create policy "channel_messages: allow updates for locking"
+    on public.channel_messages for update to authenticated
+    using (true);
+
