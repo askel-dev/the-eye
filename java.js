@@ -77,6 +77,78 @@ function scrollToBottom() {
 }
 
 // =============================================
+// 3b. SLASH COMMANDS
+// =============================================
+function appendSystemMsg(text) {
+    const feed = document.getElementById('message-feed');
+    const el = document.createElement('div');
+    el.className = 'system-msg';
+    el.textContent = '// ' + text;
+    feed.appendChild(el);
+    scrollToBottom();
+}
+
+const COMMANDS = {
+    clear:  { description: 'Clear the message feed',  handler: cmdClear },
+    who:    { description: 'Show online users',        handler: cmdWho },
+    status: { description: 'Set your status text',     handler: cmdStatus },
+    help:   { description: 'Show available commands',  handler: cmdHelp },
+};
+
+async function handleSlashCommand(body) {
+    if (!body.startsWith('/')) return false;
+    const spaceIdx = body.indexOf(' ');
+    const name = (spaceIdx === -1 ? body.slice(1) : body.slice(1, spaceIdx)).toLowerCase();
+    const args = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    const cmd = COMMANDS[name];
+    if (!cmd) {
+        appendSystemMsg('UNKNOWN COMMAND: /' + name + ' — type /help');
+        return true;
+    }
+    await cmd.handler(args);
+    return true;
+}
+
+function cmdClear() {
+    const feed = document.getElementById('message-feed');
+    feed.innerHTML = '';
+    renderedMsgIds.clear();
+    appendSystemMsg('FEED CLEARED');
+}
+
+function cmdWho() {
+    const online = allUsers.filter(u => onlineIds.has(u.id));
+    if (online.length === 0) {
+        appendSystemMsg('NO USERS ONLINE');
+    } else {
+        const names = online.map(u => u.username).sort().join(', ');
+        appendSystemMsg('ONLINE (' + online.length + '): ' + names);
+    }
+}
+
+async function cmdStatus(args) {
+    if (!args) {
+        appendSystemMsg('USAGE: /status <text>  (max 100 chars)');
+        return;
+    }
+    const text = args.slice(0, 100);
+    const { error } = await sb.from('profiles').update({ status_text: text }).eq('id', currentUser.id);
+    if (error) {
+        appendSystemMsg('ERROR SETTING STATUS');
+        console.error('cmdStatus error:', error);
+    } else {
+        appendSystemMsg('STATUS SET: ' + text);
+    }
+}
+
+function cmdHelp() {
+    appendSystemMsg('AVAILABLE COMMANDS:');
+    for (const [name, cmd] of Object.entries(COMMANDS)) {
+        appendSystemMsg('  /' + name + ' — ' + cmd.description);
+    }
+}
+
+// =============================================
 // 4. UI / RENDER
 // =============================================
 function renderContacts() {
@@ -117,7 +189,8 @@ function renderContacts() {
         el.innerHTML =
             `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
             `<span class="contact-name">${escapeHtml(user.username)}</span>` +
-            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>`;
+            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>` +
+            (user.status_text ? `<span class="contact-status">${escapeHtml(user.status_text)}</span>` : '');
         list.appendChild(el);
     }
 }
@@ -248,7 +321,7 @@ async function enterChat(userId, username) {
     currentUser = { id: userId, username };
 
     // Fetch all profiles
-    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin').order('username');
+    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin, status_text').order('username');
     allUsers = profiles || [];
 
     // Show chat view
@@ -355,6 +428,7 @@ async function sendMessage() {
     const input = document.getElementById('message-input');
     const body = input.value.trim();
     if (!body) return;
+    if (await handleSlashCommand(body)) { input.value = ''; return; }
 
     if (viewMode === 'channel' && activeChannel) {
         input.value = '';
@@ -446,7 +520,7 @@ function updateTitle() {
 
 function subscribeToProfiles() {
     profilesChannel = sb
-        .channel('profiles-inserts')
+        .channel('profiles-changes')
         .on('postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'profiles' },
             (payload) => {
@@ -454,6 +528,16 @@ function subscribeToProfiles() {
                 if (!allUsers.find(u => u.id === newUser.id)) {
                     allUsers.push(newUser);
                     allUsers.sort((a, b) => a.username.localeCompare(b.username));
+                    renderContacts();
+                }
+            })
+        .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'profiles' },
+            (payload) => {
+                const updated = payload.new;
+                const idx = allUsers.findIndex(u => u.id === updated.id);
+                if (idx !== -1) {
+                    allUsers[idx] = { ...allUsers[idx], ...updated };
                     renderContacts();
                 }
             })

@@ -379,6 +379,17 @@ h1 {
     color: #3a5a4a;
 }
 
+.contact-status {
+    display: block;
+    font-size: 10px;
+    color: #2a5040;
+    letter-spacing: 0.05em;
+    margin-left: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .channel-separator {
     height: 1px;
     background: #1c1c1c;

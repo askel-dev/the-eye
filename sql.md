@@ -3,10 +3,12 @@ Window 1 (SQL Editor — Tables, triggers, indexes)
 
 -- Profiles: one row per user, stores display username
 create table public.profiles (
-    id         uuid primary key references auth.users(id) on delete cascade,
-    username   text not null unique
-                    constraint username_format check (username ~ '^[a-zA-Z0-9_]{2,24}$'),
-    created_at timestamptz not null default now()
+    id          uuid primary key references auth.users(id) on delete cascade,
+    username    text not null unique
+                     constraint username_format check (username ~ '^[a-zA-Z0-9_]{2,24}$'),
+    status_text text default null
+                     constraint status_text_length check (char_length(trim(status_text)) <= 100),
+    created_at  timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
 
@@ -179,3 +181,13 @@ begin
     end if;
 end
 $$;
+
+
+-- ============================================
+-- 5. ADD STATUS TEXT TO PROFILES
+-- ============================================
+-- Allows users to set a status message via /status command.
+
+alter table public.profiles
+    add column if not exists status_text text default null
+    constraint status_text_length check (char_length(trim(status_text)) <= 100);
