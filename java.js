@@ -47,6 +47,7 @@ let inputHistoryIdx     = -1;       // -1 = not browsing history
 let inputHistoryDraft   = '';       // stash of unsent text when entering history
 let isUserAtBottom      = true;     // auto-scroll tracking
 let newMsgCount         = 0;        // unread count while scrolled up
+let lockedMessages      = new Set(); // message element IDs that survive /clear
 let typingChannel       = null;     // broadcast channel for typing indicators
 let typingTimeout       = null;     // timeout to hide remote typing
 let lastTypingSent      = 0;        // throttle outgoing typing events
@@ -188,6 +189,7 @@ const COMMANDS = {
     clear:  { description: 'Clear the message feed',  handler: cmdClear },
     who:    { description: 'Show online users',        handler: cmdWho },
     status: { description: 'Set your status text',     handler: cmdStatus },
+    lock:   { description: 'Lock a message by number', handler: cmdLock },
     help:   { description: 'Show available commands',  handler: cmdHelp },
 };
 
@@ -205,11 +207,77 @@ async function handleSlashCommand(body) {
     return true;
 }
 
+function toggleLock(elId) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const tag = el.querySelector('.msg-lock-tag');
+    const btn = el.querySelector('.msg-lock-btn');
+
+    if (lockedMessages.has(elId)) {
+        lockedMessages.delete(elId);
+        el.classList.remove('locked');
+        tag.classList.add('hidden');
+        btn.textContent = '[LOCK]';
+    } else {
+        lockedMessages.add(elId);
+        el.classList.add('locked');
+        tag.classList.remove('hidden');
+        btn.textContent = '[UNLOCK]';
+    }
+}
+
+function cmdLock(args) {
+    const feed = document.getElementById('message-feed');
+    const messages = Array.from(feed.querySelectorAll('.message:not(.skeleton)'));
+
+    if (!args) {
+        // Lock the last message
+        if (messages.length === 0) {
+            appendSystemMsg('NO MESSAGES TO LOCK');
+            return;
+        }
+        const last = messages[messages.length - 1];
+        toggleLock(last.id);
+        const isLocked = lockedMessages.has(last.id);
+        appendSystemMsg(isLocked ? 'MESSAGE LOCKED' : 'MESSAGE UNLOCKED');
+        return;
+    }
+
+    const num = parseInt(args, 10);
+    if (isNaN(num) || num < 1 || num > messages.length) {
+        appendSystemMsg(`USAGE: /lock [1-${messages.length}] — message number from top`);
+        return;
+    }
+
+    const target = messages[num - 1];
+    toggleLock(target.id);
+    const isLocked = lockedMessages.has(target.id);
+    appendSystemMsg(isLocked ? `MESSAGE #${num} LOCKED` : `MESSAGE #${num} UNLOCKED`);
+}
+
 function cmdClear() {
     const feed = document.getElementById('message-feed');
+
+    // Collect locked message elements
+    const locked = Array.from(feed.querySelectorAll('.message.locked'));
+
+    // Detach locked messages before wiping
+    locked.forEach(el => el.remove());
+
     feed.innerHTML = '';
     renderedMsgIds.clear();
-    appendSystemMsg('FEED CLEARED');
+
+    // Re-insert locked messages stacked at the top
+    locked.forEach(el => {
+        feed.appendChild(el);
+        // Re-add their IDs to renderedMsgIds so they don't get duped
+        const msgIdMatch = el.id.match(/^msg-(.+)$/);
+        if (msgIdMatch) renderedMsgIds.add(msgIdMatch[1]);
+    });
+
+    appendSystemMsg(locked.length > 0
+        ? `FEED CLEARED — ${locked.length} LOCKED MESSAGE${locked.length > 1 ? 'S' : ''} PRESERVED`
+        : 'FEED CLEARED');
 }
 
 function cmdWho() {
@@ -382,12 +450,24 @@ function appendMessage(msg, animate = true) {
         ? new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
         : nowTime();
 
+    // Unique element ID for lock tracking
+    const elId = 'msg-' + (msg.id || Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+    el.id = elId;
+
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
         ` <span class="msg-sender">${escapeHtml(senderName)}</span>` +
         (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
+        `<span class="msg-lock-tag hidden">[LOCKED]</span>` +
         `<span class="msg-sep">></span>` +
-        `<span class="msg-text">${escapeHtml(msg.body)}</span>`;
+        `<span class="msg-text">${escapeHtml(msg.body)}</span>` +
+        `<button class="msg-lock-btn" title="Lock message">[LOCK]</button>`;
+
+    // Lock button click
+    el.querySelector('.msg-lock-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleLock(elId);
+    });
 
     feed.appendChild(el);
     if (isUserAtBottom) {
