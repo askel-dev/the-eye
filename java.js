@@ -266,7 +266,7 @@ async function loadMessages(contactId) {
 
     const { data, error } = await sb
         .from('messages')
-        .select('*, sender:profiles!sender_id(username)')
+        .select('*')
         .or(`and(sender_id.eq.${me},recipient_id.eq.${them}),and(sender_id.eq.${them},recipient_id.eq.${me})`)
         .order('created_at', { ascending: true })
         .limit(200);
@@ -274,6 +274,12 @@ async function loadMessages(contactId) {
     if (error) {
         console.error('loadMessages error:', error);
         return;
+    }
+
+    // Attach sender info from allUsers since there's no FK to profiles
+    for (const msg of (data || [])) {
+        const sender = allUsers.find(u => u.id === msg.sender_id);
+        msg.sender = sender ? { username: sender.username } : { username: '???' };
     }
 
     renderMessages(data || []);
