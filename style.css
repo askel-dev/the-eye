@@ -366,6 +366,25 @@ h1 {
     color: #282828;
 }
 
+/* Channel entry in sidebar */
+.contact.channel-entry .contact-name {
+    color: #4a7a6a;
+}
+
+.contact.channel-entry.active .contact-name {
+    color: #6aaa8a;
+}
+
+.contact.channel-entry .contact-badge {
+    color: #3a5a4a;
+}
+
+.channel-separator {
+    height: 1px;
+    background: #1c1c1c;
+    margin: 4px 14px;
+}
+
 /* === Chat Main === */
 #chat-main {
     flex: 1;
@@ -441,6 +460,13 @@ h1 {
 
 .message.self .msg-sender {
     color: #4a6a8a;
+}
+
+.msg-admin-tag {
+    font-size: 10px;
+    color: #7a4a4a;
+    margin-left: 5px;
+    letter-spacing: 0.06em;
 }
 
 .message .msg-sep {

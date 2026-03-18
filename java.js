@@ -36,6 +36,26 @@ let realtimeChannel = null;
 let presenceChannel = null;
 let profilesChannel = null;
 let renderedMsgIds  = new Set(); // dedup for self-echo
+let audioUnlocked   = false;
+let notifAudio      = new Audio('assets/notif.mp3');
+let viewMode        = 'dm';       // 'dm' or 'channel'
+let activeChannel   = null;       // e.g. 'GLOBAL'
+let channelRealtimeChannel = null;
+
+function unlockAudio() {
+    if (audioUnlocked) return;
+    notifAudio.play().then(() => {
+        notifAudio.pause();
+        notifAudio.currentTime = 0;
+        audioUnlocked = true;
+    }).catch(() => {});
+}
+
+function playNotif() {
+    if (!audioUnlocked) return;
+    notifAudio.currentTime = 0;
+    notifAudio.play().catch(() => {});
+}
 
 // =============================================
 // 3. UTILS
@@ -63,6 +83,22 @@ function renderContacts() {
     const list = document.querySelector('.contact-list');
     list.innerHTML = '';
 
+    // Global channel entry
+    const globalEl = document.createElement('div');
+    globalEl.className = 'contact channel-entry' +
+        (viewMode === 'channel' && activeChannel === 'GLOBAL' ? ' active' : '');
+    globalEl.dataset.channel = 'GLOBAL';
+    globalEl.innerHTML =
+        `<span class="status-dot online"></span>` +
+        `<span class="contact-name"># GLOBAL</span>` +
+        `<span class="contact-badge">[CH]</span>`;
+    list.appendChild(globalEl);
+
+    // Separator
+    const sep = document.createElement('div');
+    sep.className = 'channel-separator';
+    list.appendChild(sep);
+
     const others = allUsers.filter(u => u.id !== currentUser.id);
 
     if (others.length === 0) {
@@ -76,7 +112,7 @@ function renderContacts() {
     for (const user of others) {
         const isOnline = onlineIds.has(user.id);
         const el = document.createElement('div');
-        el.className = 'contact' + (activeContact && activeContact.id === user.id ? ' active' : '');
+        el.className = 'contact' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
             `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
@@ -94,6 +130,8 @@ function appendMessage(msg, animate = true) {
     if (!animate) el.style.animation = 'none';
 
     const senderName = isSelf ? currentUser.username : (msg.sender ? msg.sender.username : '???');
+    const senderUser = allUsers.find(u => u.id === msg.sender_id);
+    const isAdmin = senderUser && senderUser.is_admin;
     const time = msg.created_at
         ? new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
         : nowTime();
@@ -101,6 +139,7 @@ function appendMessage(msg, animate = true) {
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
         ` <span class="msg-sender">${escapeHtml(senderName)}</span>` +
+        (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
         `<span class="msg-sep">></span>` +
         `<span class="msg-text">${escapeHtml(msg.body)}</span>`;
 
@@ -115,11 +154,14 @@ function renderMessages(messages) {
 
     const sys = document.createElement('div');
     sys.className = 'system-msg';
-    sys.textContent = `// CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
+    sys.textContent = viewMode === 'channel'
+        ? `// PUBLIC CHANNEL — #${activeChannel}`
+        : `// CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
     feed.appendChild(sys);
 
     for (const msg of messages) {
-        renderedMsgIds.add(msg.id);
+        const dedupKey = viewMode === 'channel' ? 'ch-' + msg.id : msg.id;
+        renderedMsgIds.add(dedupKey);
         appendMessage(msg, false);
     }
 
@@ -206,7 +248,7 @@ async function enterChat(userId, username) {
     currentUser = { id: userId, username };
 
     // Fetch all profiles
-    const { data: profiles } = await sb.from('profiles').select('id, username').order('username');
+    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin').order('username');
     allUsers = profiles || [];
 
     // Show chat view
@@ -217,6 +259,7 @@ async function enterChat(userId, username) {
     renderContacts();
     subscribeToMessages();
     subscribeToProfiles();
+    subscribeToChannelMessages();
     joinPresence();
 
     // Auto-select first contact
@@ -238,6 +281,8 @@ async function handleLogout() {
     allUsers = [];
     onlineIds.clear();
     renderedMsgIds.clear();
+    viewMode = 'dm';
+    activeChannel = null;
 
     document.getElementById('chat-view').classList.add('hidden');
     document.getElementById('login-view').classList.remove('hidden');
@@ -285,22 +330,54 @@ async function loadMessages(contactId) {
     renderMessages(data || []);
 }
 
+async function loadChannelMessages(channelName) {
+    const { data, error } = await sb
+        .from('channel_messages')
+        .select('*')
+        .eq('channel', channelName)
+        .order('created_at', { ascending: true })
+        .limit(200);
+
+    if (error) {
+        console.error('loadChannelMessages error:', error);
+        return;
+    }
+
+    for (const msg of (data || [])) {
+        const sender = allUsers.find(u => u.id === msg.sender_id);
+        msg.sender = sender ? { username: sender.username } : { username: '???' };
+    }
+
+    renderMessages(data || []);
+}
+
 async function sendMessage() {
     const input = document.getElementById('message-input');
     const body = input.value.trim();
-    if (!body || !activeContact) return;
+    if (!body) return;
 
-    input.value = '';
-
-    const { error } = await sb.from('messages').insert({
-        sender_id: currentUser.id,
-        recipient_id: activeContact.id,
-        body
-    });
-
-    if (error) {
-        console.error('sendMessage error:', error);
-        input.value = body; // restore on failure
+    if (viewMode === 'channel' && activeChannel) {
+        input.value = '';
+        const { error } = await sb.from('channel_messages').insert({
+            sender_id: currentUser.id,
+            channel: activeChannel,
+            body
+        });
+        if (error) {
+            console.error('sendChannelMessage error:', error);
+            input.value = body;
+        }
+    } else if (viewMode === 'dm' && activeContact) {
+        input.value = '';
+        const { error } = await sb.from('messages').insert({
+            sender_id: currentUser.id,
+            recipient_id: activeContact.id,
+            body
+        });
+        if (error) {
+            console.error('sendMessage error:', error);
+            input.value = body;
+        }
     }
 }
 
@@ -340,7 +417,7 @@ async function handleIncomingMessage(payload) {
     } else {
         // Play notification sound for incoming messages from non-active contacts
         if (msg.sender_id !== currentUser.id) {
-            new Audio('assets/notif.mp3').play().catch(() => {});
+            playNotif();
         }
 
         // Unread badge on sidebar contact
@@ -357,7 +434,14 @@ async function handleIncomingMessage(payload) {
             badge.dataset.count = count;
             badge.textContent = `[${count}]`;
         }
+        updateTitle();
     }
+}
+
+function updateTitle() {
+    const total = Array.from(document.querySelectorAll('.contact-unread'))
+        .reduce((sum, b) => sum + (parseInt(b.dataset.count) || 0), 0);
+    document.title = total > 0 ? `(${total}) The Eye` : 'The Eye';
 }
 
 function subscribeToProfiles() {
@@ -376,10 +460,54 @@ function subscribeToProfiles() {
         .subscribe();
 }
 
+function subscribeToChannelMessages() {
+    channelRealtimeChannel = sb
+        .channel('channel-msgs')
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'channel_messages' },
+            handleIncomingChannelMessage)
+        .subscribe();
+}
+
+function handleIncomingChannelMessage(payload) {
+    const msg = payload.new;
+
+    if (renderedMsgIds.has('ch-' + msg.id)) return;
+    renderedMsgIds.add('ch-' + msg.id);
+
+    const sender = allUsers.find(u => u.id === msg.sender_id);
+    msg.sender = sender ? { username: sender.username } : { username: '???' };
+
+    if (viewMode === 'channel' && activeChannel === msg.channel) {
+        appendMessage(msg);
+    } else {
+        // Play notification for messages from others
+        if (msg.sender_id !== currentUser.id) {
+            playNotif();
+        }
+
+        // Show unread badge on channel entry
+        const el = document.querySelector(`.contact[data-channel="${msg.channel}"]`);
+        if (el) {
+            let badge = el.querySelector('.contact-unread');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'contact-unread';
+                el.appendChild(badge);
+            }
+            const count = (parseInt(badge.dataset.count || '0')) + 1;
+            badge.dataset.count = count;
+            badge.textContent = `[${count}]`;
+        }
+        updateTitle();
+    }
+}
+
 function unsubscribeAll() {
     if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
     if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
     if (profilesChannel) { sb.removeChannel(profilesChannel); profilesChannel = null; }
+    if (channelRealtimeChannel) { sb.removeChannel(channelRealtimeChannel); channelRealtimeChannel = null; }
 }
 
 // =============================================
@@ -422,11 +550,13 @@ async function leavePresence() {
 // 9. CONTACT SWITCHING
 // =============================================
 async function switchContact(userId) {
-    if (activeContact && activeContact.id === userId) return;
+    if (viewMode === 'dm' && activeContact && activeContact.id === userId) return;
 
     const contact = allUsers.find(u => u.id === userId);
     if (!contact) return;
 
+    viewMode = 'dm';
+    activeChannel = null;
     activeContact = contact;
 
     // Clear unread badge
@@ -434,6 +564,7 @@ async function switchContact(userId) {
     if (el) {
         const badge = el.querySelector('.contact-unread');
         if (badge) badge.remove();
+        updateTitle();
     }
 
     // Update active class
@@ -445,9 +576,43 @@ async function switchContact(userId) {
     await loadMessages(userId);
 }
 
+async function switchToChannel(channelName) {
+    if (viewMode === 'channel' && activeChannel === channelName) return;
+
+    viewMode = 'channel';
+    activeChannel = channelName;
+    activeContact = null;
+
+    // Clear unread badge on channel entry
+    const el = document.querySelector(`.contact[data-channel="${channelName}"]`);
+    if (el) {
+        const badge = el.querySelector('.contact-unread');
+        if (badge) badge.remove();
+        updateTitle();
+    }
+
+    // Update active class
+    document.querySelectorAll('.contact').forEach(c => {
+        c.classList.toggle('active', c.dataset.channel === channelName);
+    });
+
+    // Update header
+    document.getElementById('chat-with-label').textContent = `// #${channelName}`;
+    const statusLabel = document.getElementById('chat-status-label');
+    statusLabel.textContent = '[PUBLIC]';
+    statusLabel.className = 'online-label';
+
+    await loadChannelMessages(channelName);
+}
+
 // =============================================
 // 10. EVENT LISTENERS
 // =============================================
+// Unlock audio on first user interaction (required for mobile browsers)
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('keydown', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
 document.getElementById('login-btn').addEventListener('click', handleLogin);
 
 document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -469,7 +634,12 @@ document.getElementById('username').addEventListener('keydown', e => {
 // Contact clicks (event delegation — contacts are dynamic)
 document.querySelector('.contact-list').addEventListener('click', e => {
     const el = e.target.closest('.contact');
-    if (el && el.dataset.userId) switchContact(el.dataset.userId);
+    if (!el) return;
+    if (el.dataset.channel) {
+        switchToChannel(el.dataset.channel);
+    } else if (el.dataset.userId) {
+        switchContact(el.dataset.userId);
+    }
 });
 
 //=============================================
