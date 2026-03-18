@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="style.css">
+    <script>(function(){ var t = localStorage.getItem('eye_theme'); if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>The Eye</title>
     <link rel="icon" type="image/x-icon" href="assets/logo.ico">
@@ -87,15 +88,7 @@
                     <div class="help-row"><span class="help-key">Escape</span><span class="help-desc">Close this modal</span></div>
                 </div>
                 <div class="help-title">// COMMANDS</div>
-                <div class="help-section">
-                    <div class="help-row"><span class="help-key">/help</span><span class="help-desc">Show available commands</span></div>
-                    <div class="help-row"><span class="help-key">/clear</span><span class="help-desc">Clear message feed</span></div>
-                    <div class="help-row"><span class="help-key">/lock [n]</span><span class="help-desc">Lock/unlock message (survives /clear)</span></div>
-                    <div class="help-row"><span class="help-key">/who</span><span class="help-desc">Show online users</span></div>
-                    <div class="help-row"><span class="help-key">/status &lt;text&gt;</span><span class="help-desc">Set your status</span></div>
-                    <div class="help-row"><span class="help-key">/color list</span><span class="help-desc">Show identity color palette</span></div>
-                    <div class="help-row"><span class="help-key">/color set [n]</span><span class="help-desc">Set your identity color</span></div>
-                </div>
+                <div id="help-commands-section" class="help-section"></div>
                 <button id="help-close-btn"><span class="bracket left">[</span>&nbsp;CLOSE<span class="bracket right">]</span></button>
             </div>
         </div>

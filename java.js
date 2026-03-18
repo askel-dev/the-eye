@@ -43,6 +43,30 @@ function getColorHex(colorId) {
     return entry ? entry.hex : '#8A9A7A'; // fallback = Sage (id 1)
 }
 
+// UI color themes
+const THEMES = [
+    { id: 'default',  name: 'Default',  desc: 'Standard dark terminal' },
+    { id: 'midnight', name: 'Midnight', desc: 'Blue-tinted dark' },
+    { id: 'phosphor', name: 'Phosphor', desc: 'Classic green CRT' },
+    { id: 'amber',    name: 'Amber',    desc: 'Warm amber CRT' },
+    { id: 'light',    name: 'Light',    desc: 'Light terminal' },
+];
+
+function applyTheme(themeId) {
+    if (themeId === 'default') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', themeId);
+    }
+    localStorage.setItem('eye_theme', themeId);
+}
+
+function getStoredTheme() {
+    return localStorage.getItem('eye_theme') || 'default';
+}
+
+applyTheme(getStoredTheme());
+
 // =============================================
 // 2. STATE
 // =============================================
@@ -222,14 +246,15 @@ function appendSystemMsgHtml(html) {
 }
 
 const COMMANDS = {
-    clear:  { description: 'Clear the message feed',       handler: cmdClear },
-    who:    { description: 'Show online users',             handler: cmdWho },
-    status: { description: 'Set your status text',          handler: cmdStatus },
-    lock:   { description: 'Lock a message by number',      handler: cmdLock },
-    mute:   { description: 'Toggle all sound effects',      handler: cmdMute },
-    color:  { description: 'List or set your identity color', handler: cmdColor },
-    top:    { description: 'Show message leaderboard',      handler: cmdTop },
-    help:   { description: 'Show available commands',       handler: cmdHelp },
+    help:   { usage: '/help',           description: 'Show available commands',       handler: cmdHelp },
+    clear:  { usage: '/clear',          description: 'Clear the message feed',        handler: cmdClear },
+    lock:   { usage: '/lock [n]',       description: 'Lock/unlock message (survives /clear)', handler: cmdLock },
+    who:    { usage: '/who',            description: 'Show online users',             handler: cmdWho },
+    top:    { usage: '/top',            description: 'Show message leaderboard',      handler: cmdTop },
+    status: { usage: '/status <text>',  description: 'Set your status text',          handler: cmdStatus },
+    color:  { usage: '/color list',     description: 'List or set your identity color', handler: cmdColor },
+    theme:  { usage: '/theme list',     description: 'List or set UI color theme',     handler: cmdTheme },
+    mute:   { usage: '/mute',           description: 'Toggle all sound effects',      handler: cmdMute },
 };
 
 async function handleSlashCommand(body) {
@@ -510,6 +535,41 @@ async function cmdColor(args) {
     }
 
     appendSystemMsg(`USAGE: /color list  OR  /color set [1-${IDENTITY_COLORS.length}]`);
+}
+
+function cmdThemeList() {
+    const current = getStoredTheme();
+    appendSystemMsg('AVAILABLE THEMES:');
+    for (const t of THEMES) {
+        const marker = t.id === current ? ' ←' : '';
+        appendSystemMsg(`  [ ${t.id} ] ${t.name} — ${t.desc}${marker}`);
+    }
+    appendSystemMsg('  > Type /theme set <name> to apply');
+}
+
+async function cmdTheme(args) {
+    const parts = args.trim().toLowerCase().split(/\s+/);
+    const sub = parts[0];
+
+    if (!sub || sub === 'list') {
+        cmdThemeList();
+        return;
+    }
+
+    if (sub === 'set') {
+        const id = parts[1];
+        const theme = THEMES.find(t => t.id === id);
+        if (!theme) {
+            appendSystemMsg(`UNKNOWN THEME: ${id || '(none)'}`);
+            cmdThemeList();
+            return;
+        }
+        applyTheme(theme.id);
+        appendSystemMsg(`THEME SET: ${theme.name}`);
+        return;
+    }
+
+    appendSystemMsg('USAGE: /theme list  OR  /theme set <name>');
 }
 
 function cmdMute() {
@@ -1334,7 +1394,7 @@ if (audioToggleBtn) {
 // Themes button
 const themesBtnEl = document.getElementById('themes-btn');
 if (themesBtnEl) {
-    themesBtnEl.addEventListener('click', cmdColorList);
+    themesBtnEl.addEventListener('click', cmdThemeList);
 }
 
 // Sidebar toggle (mobile)
@@ -1578,6 +1638,14 @@ document.addEventListener('keydown', e => {
 // HELP MODAL
 // =============================================
 function openHelpModal() {
+    const section = document.getElementById('help-commands-section');
+    section.innerHTML = '';
+    for (const [name, cmd] of Object.entries(COMMANDS)) {
+        const row = document.createElement('div');
+        row.className = 'help-row';
+        row.innerHTML = `<span class="help-key">${cmd.usage || '/' + name}</span><span class="help-desc">${cmd.description}</span>`;
+        section.appendChild(row);
+    }
     document.getElementById('help-modal').classList.remove('hidden');
 }
 

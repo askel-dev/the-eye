@@ -1,10 +1,85 @@
+/* === Theme Variables === */
+:root {
+    /* Backgrounds */
+    --bg-primary: #0f0f0f;
+    --bg-sidebar: #0a0a0a;
+    --bg-hover: #111;
+    --bg-hint-hover: #141414;
+
+    /* Text */
+    --text-primary: #9a9a9a;
+    --text-bright: #c8c8c8;
+    --text-white: #ffffff;
+    --text-msg: #d1d5db;
+    --text-msg-self: #e5e7eb;
+    --text-input: #b0b0b0;
+    --text-dim: #4a4a4a;
+    --text-dimmer: #3a3a3a;
+    --text-muted: #484848;
+    --text-muted-hover: #7a7a7a;
+    --text-contact-active: #b8b8b8;
+    --text-sidebar-header: #383838;
+    --text-sidebar-btn: #303030;
+    --text-sidebar-btn-hover: #888;
+    --text-self-username: #505050;
+    --text-placeholder: #525252;
+    --text-filter-placeholder: #2e2e2e;
+    --text-watermark: #2a2a2a;
+    --text-help-desc: #5a5a5a;
+
+    /* Accent (teal/green) */
+    --accent: #3a7a5a;
+    --accent-glow: #3a7a5a88;
+    --accent-light: #4a9a7a;
+    --accent-lighter: #6acaaa;
+    --accent-dim: #2a5a45;
+    --accent-dimmer: #2a5040;
+    --accent-channel: #4a7a6a;
+    --accent-channel-active: #6aaa8a;
+    --accent-channel-badge: #3a5a4a;
+    --accent-cmd: #7a9a6a;
+
+    /* Borders */
+    --border-primary: #1c1c1c;
+    --border-secondary: #181818;
+    --border-input: #2a2a2a;
+    --border-input-focus: #666;
+
+    /* Semantic */
+    --color-error: #7a3a3a;
+    --color-error-hover: #aa4a4a;
+    --color-admin-tag: #9a6a6a;
+    --color-login-btn: #7a8a9a;
+    --color-send-btn: #304a5a;
+    --color-system-msg: #8a7a3a;
+
+    /* Lock */
+    --lock-tag: #8a7a3a;
+    --lock-time: #6a5a2a;
+    --lock-sender: #9a8a4a;
+    --lock-sep: #5a4a2a;
+    --lock-text: #c8b868;
+
+    /* Scrollbar */
+    --scrollbar-thumb: #222;
+    --scrollbar-track: #1e1e1e;
+
+    /* Misc */
+    --offline-dot: #2a2a2a;
+    --offline-dot-large: #333;
+    --contact-badge-off: #282828;
+    --contact-unread: #4a7a6a;
+    --logo-filter: brightness(0) invert(1);
+    --sidebar-logo-filter: brightness(0) invert(0.22);
+}
+
 /* === Watermark === */
 #watermark {
     position: fixed;
     bottom: 10px;
     right: 14px;
     font-size: 10px;
-    color: #2a2a2a;
+    color: var(--text-watermark);
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     pointer-events: none;
     z-index: 9999;
@@ -56,7 +131,7 @@
     display: block;
     height: 12px;
     border-radius: 3px;
-    background: #9a9a9a;
+    background: var(--text-primary);
     animation: skel-pulse 1.2s ease-in-out infinite;
 }
 .skel-short { width: 90px; }
@@ -72,8 +147,8 @@ body {
     padding: 20px;
     box-sizing: border-box;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
-    background-color: #0f0f0f;
-    color: #9a9a9a;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 body.chat-mode {
@@ -104,11 +179,11 @@ body.chat-mode {
 .logo {
     height: 60px;
     width: auto;
-    filter: brightness(0) invert(1);
+    filter: var(--logo-filter);
 }
 
 h1 {
-    color: #c8c8c8;
+    color: var(--text-bright);
     font-size: 42px;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-weight: normal;
@@ -128,7 +203,7 @@ h1 {
 
 #login-error {
     font-size: 11px;
-    color: #7a3a3a;
+    color: var(--color-error);
     text-align: center;
     letter-spacing: 0.08em;
     min-height: 16px;
@@ -137,7 +212,7 @@ h1 {
 
 .contact-unread {
     font-size: 10px;
-    color: #4a7a6a;
+    color: var(--contact-unread);
     margin-left: auto;
 }
 
@@ -154,10 +229,10 @@ h1 {
     padding: 10px 4px;
     font-size: 16px;
     border: none;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--border-input);
     border-radius: 0;
     background-color: transparent;
-    color: #b0b0b0;
+    color: var(--text-input);
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     outline: none;
     margin-bottom: 18px;
@@ -167,14 +242,14 @@ h1 {
 
 #username:focus,
 #password:focus {
-    border-bottom-color: #666;
-    caret-color: #c8c8c8;
+    border-bottom-color: var(--border-input-focus);
+    caret-color: var(--text-bright);
     caret-shape: block;
 }
 
 #username::placeholder,
 #password::placeholder {
-    color: #525252;
+    color: var(--text-placeholder);
 }
 
 #login-btn {
@@ -185,7 +260,7 @@ h1 {
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     letter-spacing: 0.2em;
     background: none;
-    color: #7a8a9a;
+    color: var(--color-login-btn);
     border: none;
     outline: none;
     text-align: center;
@@ -198,7 +273,7 @@ h1 {
 }
 
 #login-btn:hover {
-    color: #ffffff;
+    color: var(--text-white);
 }
 
 #login-btn:hover .bracket.left {
@@ -267,8 +342,8 @@ h1 {
 #chat-sidebar {
     width: 190px;
     min-width: 140px;
-    background: #0a0a0a;
-    border-right: 1px solid #1c1c1c;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -279,8 +354,8 @@ h1 {
     padding: 14px 14px;
     font-size: 11px;
     letter-spacing: 0.12em;
-    color: #383838;
-    border-bottom: 1px solid #181818;
+    color: var(--text-sidebar-header);
+    border-bottom: 1px solid var(--border-secondary);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -289,11 +364,11 @@ h1 {
 .sidebar-logo {
     height: 18px;
     width: auto;
-    filter: brightness(0) invert(0.22);
+    filter: var(--sidebar-logo-filter);
 }
 
 #self-info {
-    border-top: 1px solid #181818;
+    border-top: 1px solid var(--border-secondary);
     padding: 8px 14px;
     display: flex;
     flex-direction: column;
@@ -317,13 +392,13 @@ h1 {
 #self-username {
     font-size: 11px;
     letter-spacing: 0.1em;
-    color: #505050;
+    color: var(--text-self-username);
 }
 
 #self-status-text {
     font-size: 10px;
     letter-spacing: 0.06em;
-    color: #3a7a5a;
+    color: var(--accent);
     padding-left: 16px;
     display: none;
     white-space: nowrap;
@@ -335,11 +410,11 @@ h1 {
 .sidebar-btn {
     background: none;
     border: none;
-    border-top: 1px solid #181818;
+    border-top: 1px solid var(--border-secondary);
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 11px;
     letter-spacing: 0.18em;
-    color: #303030;
+    color: var(--text-sidebar-btn);
     cursor: pointer;
     padding: 11px 14px;
     text-align: left;
@@ -349,7 +424,7 @@ h1 {
 }
 
 .sidebar-btn:hover {
-    color: #888;
+    color: var(--text-sidebar-btn-hover);
 }
 
 .sidebar-btn .bracket {
@@ -367,11 +442,11 @@ h1 {
 
 /* Audio toggle specific sidebar styling */
 #audio-toggle.muted {
-    color: #7a3a3a;
+    color: var(--color-error);
 }
 
 #audio-toggle.muted:hover {
-    color: #aa4a4a;
+    color: var(--color-error-hover);
 }
 
 /* === Contact Filter === */
@@ -380,16 +455,16 @@ h1 {
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    border-bottom: 1px solid #181818;
+    border-bottom: 1px solid var(--border-secondary);
     flex-shrink: 0;
     position: sticky;
     top: 0;
-    background: #0a0a0a;
+    background: var(--bg-sidebar);
     z-index: 2;
 }
 
 .contact-filter-prefix {
-    color: #3a7a5a;
+    color: var(--accent);
     font-size: 12px;
     flex-shrink: 0;
 }
@@ -401,14 +476,14 @@ h1 {
     outline: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 12px;
-    color: #9a9a9a;
-    caret-color: #9a9a9a;
+    color: var(--text-primary);
+    caret-color: var(--text-primary);
     letter-spacing: 0.05em;
     min-width: 0;
 }
 
 #contact-filter::placeholder {
-    color: #2e2e2e;
+    color: var(--text-filter-placeholder);
 }
 
 #contact-filter:focus {
@@ -429,17 +504,17 @@ h1 {
     cursor: pointer;
     transition: background 0.1s;
     font-size: 13px;
-    color: #484848;
+    color: var(--text-muted);
 }
 
 .contact:hover {
-    background: #111;
-    color: #7a7a7a;
+    background: var(--bg-hover);
+    color: var(--text-muted-hover);
 }
 
 .contact.active {
-    background: #111;
-    color: #b8b8b8;
+    background: var(--bg-hover);
+    color: var(--text-contact-active);
 }
 
 .status-dot {
@@ -450,12 +525,12 @@ h1 {
 }
 
 .status-dot.online {
-    background: #3a7a5a;
-    box-shadow: 0 0 5px #3a7a5a88;
+    background: var(--accent);
+    box-shadow: 0 0 5px var(--accent-glow);
 }
 
 .status-dot.offline {
-    background: #2a2a2a;
+    background: var(--offline-dot);
 }
 
 .contact-name {
@@ -467,32 +542,32 @@ h1 {
 
 .contact-badge {
     font-size: 10px;
-    color: #2a5a45;
+    color: var(--accent-dim);
     letter-spacing: 0.04em;
     flex-shrink: 0;
 }
 
 .contact-badge.off {
-    color: #282828;
+    color: var(--contact-badge-off);
 }
 
 /* Channel entry in sidebar */
 .contact.channel-entry .contact-name {
-    color: #4a7a6a;
+    color: var(--accent-channel);
 }
 
 .contact.channel-entry.active .contact-name {
-    color: #6aaa8a;
+    color: var(--accent-channel-active);
 }
 
 .contact.channel-entry .contact-badge {
-    color: #3a5a4a;
+    color: var(--accent-channel-badge);
 }
 
 .contact-status {
     display: block;
     font-size: 10px;
-    color: #2a5040;
+    color: var(--accent-dimmer);
     letter-spacing: 0.05em;
     margin-left: 18px;
     overflow: hidden;
@@ -502,7 +577,7 @@ h1 {
 
 .channel-separator {
     height: 1px;
-    background: #1c1c1c;
+    background: var(--border-primary);
     margin: 4px 14px;
 }
 
@@ -518,7 +593,7 @@ h1 {
 
 #chat-header {
     padding: 13px 20px;
-    border-bottom: 1px solid #181818;
+    border-bottom: 1px solid var(--border-secondary);
     font-size: 13px;
     letter-spacing: 0.08em;
     display: flex;
@@ -528,7 +603,7 @@ h1 {
 }
 
 #chat-with-label {
-    color: #c8c8c8;
+    color: var(--text-bright);
 }
 
 .status-dot {
@@ -543,12 +618,12 @@ h1 {
 }
 
 .status-dot.online-dot {
-    background-color: #3a7a5a;
-    box-shadow: 0 0 6px #3a7a5a;
+    background-color: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
 }
 
 .status-dot.offline-dot {
-    background-color: #333;
+    background-color: var(--offline-dot-large);
     box-shadow: none;
 }
 
@@ -558,11 +633,11 @@ h1 {
 }
 
 #chat-status-label.online-label {
-    color: #3a7a5a;
+    color: var(--accent);
 }
 
 #chat-status-label.offline-label {
-    color: #383838;
+    color: var(--text-sidebar-header);
 }
 
 /* === Message Feed === */
@@ -574,7 +649,7 @@ h1 {
     flex-direction: column;
     gap: 4px;
     scrollbar-width: thin;
-    scrollbar-color: #1e1e1e transparent;
+    scrollbar-color: var(--scrollbar-track) transparent;
 }
 
 #message-feed::-webkit-scrollbar {
@@ -582,7 +657,7 @@ h1 {
 }
 
 #message-feed::-webkit-scrollbar-thumb {
-    background: #222;
+    background: var(--scrollbar-thumb);
     border-radius: 2px;
 }
 
@@ -593,7 +668,7 @@ h1 {
 }
 
 .message .msg-time {
-    color: #4a4a4a;
+    color: var(--text-dim);
 }
 
 .message .msg-sender {
@@ -603,28 +678,28 @@ h1 {
 
 .msg-admin-tag {
     font-size: 10px;
-    color: #9a6a6a;
+    color: var(--color-admin-tag);
     margin-left: 5px;
     letter-spacing: 0.06em;
 }
 
 .message .msg-sep {
-    color: #3a3a3a;
+    color: var(--text-dimmer);
     margin: 0 5px;
 }
 
 .message .msg-text {
-    color: #d1d5db;
+    color: var(--text-msg);
 }
 
 .message.self .msg-text {
-    color: #e5e7eb;
+    color: var(--text-msg-self);
 }
 
 /* === Locked Messages === */
 .message .msg-lock-tag {
     font-size: 10px;
-    color: #8a7a3a;
+    color: var(--lock-tag);
     margin-left: 5px;
     letter-spacing: 0.06em;
 }
@@ -634,7 +709,7 @@ h1 {
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 10px;
-    color: #3a3a3a;
+    color: var(--text-dimmer);
     cursor: pointer;
     margin-left: 8px;
     padding: 0;
@@ -648,12 +723,12 @@ h1 {
 }
 
 .message .msg-lock-btn:hover {
-    color: #8a7a3a;
+    color: var(--lock-tag);
 }
 
 .message.locked .msg-lock-btn {
     opacity: 0.6;
-    color: #8a7a3a;
+    color: var(--lock-tag);
 }
 
 .message.locked:hover .msg-lock-btn {
@@ -661,24 +736,24 @@ h1 {
 }
 
 .message.locked .msg-time {
-    color: #6a5a2a;
+    color: var(--lock-time);
 }
 
 .message.locked .msg-sender {
-    color: #9a8a4a;
+    color: var(--lock-sender);
 }
 
 .message.locked .msg-sep {
-    color: #5a4a2a;
+    color: var(--lock-sep);
 }
 
 .message.locked .msg-text {
-    color: #c8b868;
+    color: var(--lock-text);
 }
 
 .system-msg {
     font-size: 11px;
-    color: #8a7a3a;
+    color: var(--color-system-msg);
     letter-spacing: 0.1em;
     padding: 6px 0 10px;
     animation: emerge-up 0.3s ease both;
@@ -702,12 +777,12 @@ h1 {
 .date-separator-line {
     flex: 1;
     height: 1px;
-    background: #1c1c1c;
+    background: var(--border-primary);
 }
 
 .date-separator-label {
     font-size: 10px;
-    color: #3a3a3a;
+    color: var(--text-dimmer);
     letter-spacing: 0.15em;
     white-space: nowrap;
 }
@@ -718,9 +793,9 @@ h1 {
     bottom: 70px;
     left: 50%;
     transform: translateX(-50%);
-    background: #0a0a0a;
-    border: 1px solid #2a5a45;
-    color: #4a9a7a;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent-light);
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 11px;
     letter-spacing: 0.1em;
@@ -732,15 +807,15 @@ h1 {
 }
 
 #new-msg-indicator:hover {
-    color: #6acaaa;
-    border-color: #3a7a5a;
+    color: var(--accent-lighter);
+    border-color: var(--accent);
 }
 
 /* === Typing Indicator === */
 #typing-indicator {
     padding: 2px 22px 8px;
     font-size: 12px;
-    color: #2a5040;
+    color: var(--accent-dimmer);
     letter-spacing: 0.05em;
     min-height: 22px;
     flex-shrink: 0;
@@ -756,13 +831,13 @@ h1 {
     bottom: 52px;
     left: 20px;
     right: 20px;
-    background: #0a0a0a;
-    border: 1px solid #1c1c1c;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-primary);
     z-index: 60;
     max-height: 160px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #1e1e1e transparent;
+    scrollbar-color: var(--scrollbar-track) transparent;
 }
 
 .cmd-hint {
@@ -777,16 +852,16 @@ h1 {
 
 .cmd-hint:hover,
 .cmd-hint.active {
-    background: #141414;
+    background: var(--bg-hint-hover);
 }
 
 .cmd-hint-name {
-    color: #7a9a6a;
+    color: var(--accent-cmd);
     white-space: nowrap;
 }
 
 .cmd-hint-desc {
-    color: #4a4a4a;
+    color: var(--text-dim);
     font-size: 11px;
 }
 
@@ -796,12 +871,12 @@ h1 {
     align-items: center;
     gap: 10px;
     padding: 13px 20px;
-    border-top: 1px solid #181818;
+    border-top: 1px solid var(--border-secondary);
     flex-shrink: 0;
 }
 
 .input-prefix {
-    color: #3a7a5a;
+    color: var(--accent);
     font-size: 14px;
     flex-shrink: 0;
 }
@@ -813,8 +888,8 @@ h1 {
     outline: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 14px;
-    color: #c8c8c8;
-    caret-color: #c8c8c8;
+    color: var(--text-bright);
+    caret-color: var(--text-bright);
     min-width: 0;
 }
 
@@ -823,7 +898,7 @@ h1 {
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 12px;
-    color: #304a5a;
+    color: var(--color-send-btn);
     cursor: pointer;
     letter-spacing: 0.15em;
     padding: 4px 0;
@@ -832,7 +907,7 @@ h1 {
 }
 
 #send-btn:hover {
-    color: #c8c8c8;
+    color: var(--text-bright);
 }
 
 #send-btn .bracket {
@@ -853,7 +928,7 @@ h1 {
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 12px;
-    color: #304a5a;
+    color: var(--color-send-btn);
     cursor: pointer;
     letter-spacing: 0.15em;
     padding: 4px 0;
@@ -880,8 +955,8 @@ h1 {
 
 #help-modal-content {
     position: relative;
-    background: #0f0f0f;
-    border: 1px solid #1c1c1c;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
     padding: 24px 28px;
     max-width: 380px;
     width: 90%;
@@ -890,7 +965,7 @@ h1 {
 
 .help-title {
     font-size: 11px;
-    color: #4a4a4a;
+    color: var(--text-dim);
     letter-spacing: 0.12em;
     margin-bottom: 12px;
 }
@@ -913,13 +988,13 @@ h1 {
 }
 
 .help-key {
-    color: #7a9a6a;
+    color: var(--accent-cmd);
     white-space: nowrap;
     min-width: 130px;
 }
 
 .help-desc {
-    color: #5a5a5a;
+    color: var(--text-help-desc);
 }
 
 #help-close-btn {
@@ -928,7 +1003,7 @@ h1 {
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 11px;
     letter-spacing: 0.18em;
-    color: #303030;
+    color: var(--text-sidebar-btn);
     cursor: pointer;
     padding: 0;
     margin-top: 20px;
@@ -936,7 +1011,7 @@ h1 {
 }
 
 #help-close-btn:hover {
-    color: #888;
+    color: var(--text-sidebar-btn-hover);
 }
 
 #help-close-btn .bracket {
@@ -959,7 +1034,7 @@ h1 {
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     font-size: 14px;
-    color: #505050;
+    color: var(--text-self-username);
     cursor: pointer;
     padding: 4px 0;
     flex-shrink: 0;
@@ -967,7 +1042,7 @@ h1 {
 }
 
 #sidebar-toggle:hover {
-    color: #c8c8c8;
+    color: var(--text-bright);
 }
 
 #sidebar-toggle .bracket {
@@ -999,7 +1074,7 @@ h1 {
         min-width: 56px;
         min-height: 56px;
         font-size: 24px;
-        color: #7a8a9a;
+        color: var(--color-login-btn);
         margin: -14px -4px -14px -10px;
     }
 
@@ -1110,4 +1185,273 @@ h1 {
     #watermark {
         display: none;
     }
+}
+
+/* ========================================
+   THEMES
+   ======================================== */
+
+/* Midnight — blue-tinted dark */
+[data-theme="midnight"] {
+    --bg-primary: #0c0e16;
+    --bg-sidebar: #080a12;
+    --bg-hover: #101428;
+    --bg-hint-hover: #121624;
+
+    --text-primary: #8a8a9a;
+    --text-bright: #c0c4d0;
+    --text-white: #e8ecf4;
+    --text-msg: #b8bcc8;
+    --text-msg-self: #d0d4e0;
+    --text-input: #9a9aaa;
+    --text-dim: #3a3a5a;
+    --text-dimmer: #2a2a4a;
+    --text-muted: #404060;
+    --text-muted-hover: #6a6a8a;
+    --text-contact-active: #a0a0c0;
+    --text-sidebar-header: #2a2a4a;
+    --text-sidebar-btn: #252540;
+    --text-sidebar-btn-hover: #7070a0;
+    --text-self-username: #404068;
+    --text-placeholder: #3a3a5a;
+    --text-filter-placeholder: #1e1e34;
+    --text-watermark: #1a1a2a;
+    --text-help-desc: #4a4a6a;
+
+    --accent: #4a6a9a;
+    --accent-glow: #4a6a9a88;
+    --accent-light: #5a8aba;
+    --accent-lighter: #7aaada;
+    --accent-dim: #2a3a5a;
+    --accent-dimmer: #1a2a4a;
+    --accent-channel: #4a6a8a;
+    --accent-channel-active: #6a8aaa;
+    --accent-channel-badge: #3a4a6a;
+    --accent-cmd: #6a8aaa;
+
+    --border-primary: #1a1c2a;
+    --border-secondary: #14162a;
+    --border-input: #2a2a3a;
+    --border-input-focus: #5a5a8a;
+
+    --color-error: #7a3a4a;
+    --color-error-hover: #aa4a5a;
+    --color-admin-tag: #8a6a7a;
+    --color-login-btn: #6a7a9a;
+    --color-send-btn: #3a4a6a;
+    --color-system-msg: #6a7a9a;
+
+    --lock-tag: #6a7a9a;
+    --lock-time: #3a4a6a;
+    --lock-sender: #7a8aaa;
+    --lock-sep: #2a3a5a;
+    --lock-text: #8aaace;
+
+    --scrollbar-thumb: #1a1a2a;
+    --scrollbar-track: #14142a;
+
+    --offline-dot: #1a1a2a;
+    --offline-dot-large: #2a2a3a;
+    --contact-badge-off: #1e1e2e;
+    --contact-unread: #4a6a8a;
+    --sidebar-logo-filter: brightness(0) invert(0.18);
+}
+
+/* Phosphor — classic green CRT */
+[data-theme="phosphor"] {
+    --bg-primary: #040804;
+    --bg-sidebar: #020602;
+    --bg-hover: #0a140a;
+    --bg-hint-hover: #0c180c;
+
+    --text-primary: #33aa33;
+    --text-bright: #44dd44;
+    --text-white: #66ff66;
+    --text-msg: #33cc33;
+    --text-msg-self: #44ee44;
+    --text-input: #33aa33;
+    --text-dim: #1a5a1a;
+    --text-dimmer: #145014;
+    --text-muted: #1a6a1a;
+    --text-muted-hover: #33aa33;
+    --text-contact-active: #44cc44;
+    --text-sidebar-header: #145014;
+    --text-sidebar-btn: #0e3a0e;
+    --text-sidebar-btn-hover: #33aa33;
+    --text-self-username: #1a6a1a;
+    --text-placeholder: #1a5a1a;
+    --text-filter-placeholder: #0a2a0a;
+    --text-watermark: #0a2a0a;
+    --text-help-desc: #1a6a1a;
+
+    --accent: #22aa22;
+    --accent-glow: #22aa2288;
+    --accent-light: #33cc33;
+    --accent-lighter: #55ee55;
+    --accent-dim: #0e5a0e;
+    --accent-dimmer: #0a4a0a;
+    --accent-channel: #22aa22;
+    --accent-channel-active: #33cc33;
+    --accent-channel-badge: #145a14;
+    --accent-cmd: #33bb33;
+
+    --border-primary: #0a1a0a;
+    --border-secondary: #081808;
+    --border-input: #0e2a0e;
+    --border-input-focus: #33aa33;
+
+    --color-error: #aa3333;
+    --color-error-hover: #cc4444;
+    --color-admin-tag: #559955;
+    --color-login-btn: #33aa33;
+    --color-send-btn: #145a14;
+    --color-system-msg: #228822;
+
+    --lock-tag: #559955;
+    --lock-time: #1a5a1a;
+    --lock-sender: #44aa44;
+    --lock-sep: #145014;
+    --lock-text: #55cc55;
+
+    --scrollbar-thumb: #0e2a0e;
+    --scrollbar-track: #0a1a0a;
+
+    --offline-dot: #0a2a0a;
+    --offline-dot-large: #0e3a0e;
+    --contact-badge-off: #081808;
+    --contact-unread: #22aa22;
+    --sidebar-logo-filter: brightness(0) invert(0.15);
+}
+
+/* Amber — warm amber CRT */
+[data-theme="amber"] {
+    --bg-primary: #0a0800;
+    --bg-sidebar: #060400;
+    --bg-hover: #141000;
+    --bg-hint-hover: #181200;
+
+    --text-primary: #aa8833;
+    --text-bright: #ddaa33;
+    --text-white: #ffcc44;
+    --text-msg: #ccaa44;
+    --text-msg-self: #ddbb44;
+    --text-input: #aa8833;
+    --text-dim: #5a4a1a;
+    --text-dimmer: #504014;
+    --text-muted: #6a5a1a;
+    --text-muted-hover: #aa8833;
+    --text-contact-active: #ccaa44;
+    --text-sidebar-header: #504014;
+    --text-sidebar-btn: #3a2a0e;
+    --text-sidebar-btn-hover: #aa8833;
+    --text-self-username: #6a5a1a;
+    --text-placeholder: #5a4a1a;
+    --text-filter-placeholder: #2a1a0a;
+    --text-watermark: #2a1a0a;
+    --text-help-desc: #6a5a1a;
+
+    --accent: #aa8822;
+    --accent-glow: #aa882288;
+    --accent-light: #ccaa33;
+    --accent-lighter: #eebb44;
+    --accent-dim: #5a4a0e;
+    --accent-dimmer: #4a3a0a;
+    --accent-channel: #aa8822;
+    --accent-channel-active: #ccaa33;
+    --accent-channel-badge: #5a4a14;
+    --accent-cmd: #bb9933;
+
+    --border-primary: #1a1400;
+    --border-secondary: #181000;
+    --border-input: #2a2000;
+    --border-input-focus: #aa8833;
+
+    --color-error: #aa4433;
+    --color-error-hover: #cc5544;
+    --color-admin-tag: #998844;
+    --color-login-btn: #aa8833;
+    --color-send-btn: #5a4a14;
+    --color-system-msg: #888822;
+
+    --lock-tag: #998844;
+    --lock-time: #5a4a1a;
+    --lock-sender: #aa9944;
+    --lock-sep: #504014;
+    --lock-text: #ccbb55;
+
+    --scrollbar-thumb: #2a2000;
+    --scrollbar-track: #1a1400;
+
+    --offline-dot: #2a2000;
+    --offline-dot-large: #3a2a0e;
+    --contact-badge-off: #181000;
+    --contact-unread: #aa8822;
+    --sidebar-logo-filter: brightness(0) invert(0.15);
+}
+
+/* Light — light terminal */
+[data-theme="light"] {
+    --bg-primary: #e8e8e8;
+    --bg-sidebar: #dedede;
+    --bg-hover: #d0d0d0;
+    --bg-hint-hover: #c8c8c8;
+
+    --text-primary: #4a4a4a;
+    --text-bright: #1a1a1a;
+    --text-white: #000000;
+    --text-msg: #2a2a2a;
+    --text-msg-self: #1a1a1a;
+    --text-input: #3a3a3a;
+    --text-dim: #8a8a8a;
+    --text-dimmer: #9a9a9a;
+    --text-muted: #7a7a7a;
+    --text-muted-hover: #4a4a4a;
+    --text-contact-active: #1a1a1a;
+    --text-sidebar-header: #9a9a9a;
+    --text-sidebar-btn: #aaaaaa;
+    --text-sidebar-btn-hover: #4a4a4a;
+    --text-self-username: #7a7a7a;
+    --text-placeholder: #9a9a9a;
+    --text-filter-placeholder: #b0b0b0;
+    --text-watermark: #c8c8c8;
+    --text-help-desc: #7a7a7a;
+
+    --accent: #2a6a4a;
+    --accent-glow: #2a6a4a44;
+    --accent-light: #1a5a3a;
+    --accent-lighter: #0a4a2a;
+    --accent-dim: #5a9a7a;
+    --accent-dimmer: #7aaa8a;
+    --accent-channel: #2a6a4a;
+    --accent-channel-active: #1a5a3a;
+    --accent-channel-badge: #5a9a7a;
+    --accent-cmd: #2a6a4a;
+
+    --border-primary: #c0c0c0;
+    --border-secondary: #cccccc;
+    --border-input: #b0b0b0;
+    --border-input-focus: #666;
+
+    --color-error: #aa3a3a;
+    --color-error-hover: #cc4a4a;
+    --color-admin-tag: #8a5a5a;
+    --color-login-btn: #4a5a6a;
+    --color-send-btn: #7a8a9a;
+    --color-system-msg: #6a6a2a;
+
+    --lock-tag: #7a6a2a;
+    --lock-time: #8a8a4a;
+    --lock-sender: #6a5a1a;
+    --lock-sep: #b0b080;
+    --lock-text: #5a5a1a;
+
+    --scrollbar-thumb: #b0b0b0;
+    --scrollbar-track: #c0c0c0;
+
+    --offline-dot: #c0c0c0;
+    --offline-dot-large: #aaaaaa;
+    --contact-badge-off: #c8c8c8;
+    --contact-unread: #2a6a4a;
+    --logo-filter: brightness(0) invert(0);
+    --sidebar-logo-filter: brightness(0) invert(0.7);
 }
