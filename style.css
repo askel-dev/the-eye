@@ -690,10 +690,10 @@ h1 {
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 44px;
-        min-height: 44px;
-        font-size: 16px;
-        margin: -8px -4px -8px -8px;
+        min-width: 52px;
+        min-height: 52px;
+        font-size: 20px;
+        margin: -14px -4px -14px -10px;
     }
 
     /* Sidebar becomes fixed overlay */
@@ -740,11 +740,12 @@ h1 {
         min-height: 44px;
     }
 
-    /* Chat header */
+    /* Chat header — tall and easy to interact with */
     #chat-header {
-        padding: 10px 14px;
-        gap: 8px;
-        font-size: 12px;
+        padding: 16px 18px;
+        gap: 10px;
+        font-size: 13px;
+        min-height: 54px;
     }
 
     #chat-status-label {
