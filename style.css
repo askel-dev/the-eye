@@ -597,12 +597,8 @@ h1 {
 }
 
 .message .msg-sender {
-    color: #7a9a6a;
+    /* color applied inline per-user via getColorHex() */
     margin-left: 4px;
-}
-
-.message.self .msg-sender {
-    color: #4a8a9a;
 }
 
 .msg-admin-tag {
@@ -687,6 +683,12 @@ h1 {
     padding: 6px 0 10px;
     animation: emerge-up 0.3s ease both;
     font-style: italic;
+}
+
+/* Color swatch — used in /color list output */
+.system-msg .color-swatch-text {
+    font-style: normal;
+    font-weight: normal;
 }
 
 /* === Date Separators === */

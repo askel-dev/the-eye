@@ -25,6 +25,23 @@ const SUPABASE_URL  = 'https://afuwppfrljzmnbndizxz.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmdXdwcGZybGp6bW5ibmRpenh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDA4MzgsImV4cCI6MjA4OTQxNjgzOH0.-EK1da5r3n38YVs6pPPKMWiyWyzsVdGlUwX5iygY5LA';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+// Curated identity color palette — terminal-safe, readable on dark backgrounds
+const IDENTITY_COLORS = [
+    { id: 1, name: 'Amber CRT',      hex: '#FFB347' },
+    { id: 2, name: 'Cyber Cyan',     hex: '#00E5CC' },
+    { id: 3, name: 'Phosphor Green', hex: '#39FF14' },
+    { id: 4, name: 'Muted Magenta',  hex: '#C06080' },
+    { id: 5, name: 'Dusty Rose',     hex: '#C97B8A' },
+    { id: 6, name: 'Slate Blue',     hex: '#7B9FCF' },
+    { id: 7, name: 'Warm Ivory',     hex: '#E8DCC8' },
+    { id: 8, name: 'Soft Coral',     hex: '#E8886A' },
+];
+
+function getColorHex(colorId) {
+    const entry = IDENTITY_COLORS.find(c => c.id === colorId);
+    return entry ? entry.hex : '#7a9a6a'; // fallback = original sender green
+}
+
 // =============================================
 // 2. STATE
 // =============================================
@@ -179,22 +196,29 @@ function hideTypingIndicator() {
 // =============================================
 // 3b. SLASH COMMANDS
 // =============================================
-function appendSystemMsg(text) {
+function appendSystemMsg(text, swatchColor = null) {
     const feed = document.getElementById('message-feed');
     const el = document.createElement('div');
     el.className = 'system-msg';
-    el.textContent = '// ' + text;
+    if (swatchColor) {
+        // Render the ██ swatch in the actual color, rest in normal system-msg color
+        const colored = text.replace('██', `<span style="color:${swatchColor};font-style:normal">██</span>`);
+        el.innerHTML = '// ' + colored;
+    } else {
+        el.textContent = '// ' + text;
+    }
     feed.appendChild(el);
     scrollToBottom();
 }
 
 const COMMANDS = {
-    clear:  { description: 'Clear the message feed',  handler: cmdClear },
-    who:    { description: 'Show online users',        handler: cmdWho },
-    status: { description: 'Set your status text',     handler: cmdStatus },
-    lock:   { description: 'Lock a message by number', handler: cmdLock },
-    mute:   { description: 'Toggle all sound effects', handler: cmdMute },
-    help:   { description: 'Show available commands',  handler: cmdHelp },
+    clear:  { description: 'Clear the message feed',       handler: cmdClear },
+    who:    { description: 'Show online users',             handler: cmdWho },
+    status: { description: 'Set your status text',          handler: cmdStatus },
+    lock:   { description: 'Lock a message by number',      handler: cmdLock },
+    mute:   { description: 'Toggle all sound effects',      handler: cmdMute },
+    color:  { description: 'List or set your identity color', handler: cmdColor },
+    help:   { description: 'Show available commands',       handler: cmdHelp },
 };
 
 async function handleSlashCommand(body) {
@@ -403,6 +427,50 @@ function cmdHelp() {
     }
 }
 
+function cmdColorList() {
+    appendSystemMsg('AVAILABLE IDENTITY COLORS:');
+    for (const c of IDENTITY_COLORS) {
+        const num = String(c.id).padStart(1, ' ');
+        appendSystemMsg(`  [ ${num} ] \u2588\u2588 ${c.name}`, c.hex);
+    }
+    appendSystemMsg('  > Type /color set [number] to apply');
+}
+
+async function cmdColor(args) {
+    const parts = args.trim().toLowerCase().split(/\s+/);
+    const sub = parts[0];
+
+    if (!sub || sub === 'list') {
+        cmdColorList();
+        return;
+    }
+
+    if (sub === 'set') {
+        const num = parseInt(parts[1], 10);
+        if (isNaN(num) || num < 1 || num > IDENTITY_COLORS.length) {
+            appendSystemMsg(`USAGE: /color set [1-${IDENTITY_COLORS.length}]`);
+            return;
+        }
+        const chosen = IDENTITY_COLORS.find(c => c.id === num);
+        const { error } = await sb.from('profiles').update({ color_id: num }).eq('id', currentUser.id);
+        if (error) {
+            appendSystemMsg('ERROR: COULD NOT SET COLOR');
+            console.error('cmdColor error:', error);
+            return;
+        }
+        currentUser.color_id = num;
+        // Update self-username color in sidebar
+        const selfEl = document.getElementById('self-username');
+        if (selfEl) selfEl.style.color = chosen.hex;
+        // Recolor any already-rendered messages by self
+        recolorRenderedMessages(currentUser.id);
+        appendSystemMsg(`COLOR SET: ${chosen.name}`);
+        return;
+    }
+
+    appendSystemMsg('USAGE: /color list  OR  /color set [1-8]');
+}
+
 function cmdMute() {
     toggleMute();
     appendSystemMsg(isMuted ? 'AUDIO MUTED' : 'AUDIO UNMUTED');
@@ -544,8 +612,9 @@ function appendMessage(msg, animate = true) {
     if (!animate) el.style.animation = 'none';
 
     const senderName = isSelf ? currentUser.username : (msg.sender ? msg.sender.username : '???');
-    const senderUser = allUsers.find(u => u.id === msg.sender_id);
+    const senderUser = isSelf ? currentUser : allUsers.find(u => u.id === msg.sender_id);
     const isAdmin = senderUser && senderUser.is_admin;
+    const senderColor = getColorHex(senderUser?.color_id);
     const time = msg.created_at
         ? new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
         : nowTime();
@@ -557,6 +626,7 @@ function appendMessage(msg, animate = true) {
     el.id = elId;
     el.dataset.msgId = msgDbId;
     el.dataset.lockType = lockType;
+    el.dataset.senderId = msg.sender_id; // for recolorRenderedMessages
 
     const lockKey = lockType + ':' + msgDbId;
     // Check both DB field and local set (local set covers optimistic updates)
@@ -571,7 +641,7 @@ function appendMessage(msg, animate = true) {
 
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
-        ` <span class="msg-sender">${escapeHtml(senderName)}</span>` +
+        ` <span class="msg-sender" style="color:${senderColor}">${escapeHtml(senderName)}</span>` +
         (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
         `<span class="msg-lock-tag${isLocked ? '' : ' hidden'}">[LOCKED]</span>` +
         `<span class="msg-sep">></span>` +
@@ -731,12 +801,24 @@ async function handleLogin() {
     await enterChat(userId, username);
 }
 
+function recolorRenderedMessages(userId) {
+    const user = userId === currentUser.id ? currentUser : allUsers.find(u => u.id === userId);
+    const hex = getColorHex(user?.color_id);
+    document.querySelectorAll(`.message[data-sender-id="${userId}"] .msg-sender`).forEach(el => {
+        el.style.color = hex;
+    });
+}
+
 async function enterChat(userId, username) {
     currentUser = { id: userId, username };
 
-    // Fetch all profiles
-    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin, status_text').order('username');
+    // Fetch all profiles (including color_id)
+    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin, status_text, color_id').order('username');
     allUsers = profiles || [];
+
+    // Set own color_id on currentUser
+    const myProfile = allUsers.find(u => u.id === userId);
+    if (myProfile) currentUser.color_id = myProfile.color_id;
 
     // Show chat view
     document.getElementById('login-view').classList.add('hidden');
@@ -744,8 +826,9 @@ async function enterChat(userId, username) {
     document.body.classList.add('chat-mode');
 
     // Populate self-info panel
-    document.getElementById('self-username').textContent = username;
-    const myProfile = allUsers.find(u => u.id === userId);
+    const selfUsernameEl = document.getElementById('self-username');
+    selfUsernameEl.textContent = username;
+    selfUsernameEl.style.color = getColorHex(currentUser.color_id);
     updateSelfStatus(myProfile ? myProfile.status_text : null);
 
     renderContacts();
@@ -1020,8 +1103,12 @@ function subscribeToProfiles() {
                 const updated = payload.new;
                 const idx = allUsers.findIndex(u => u.id === updated.id);
                 if (idx !== -1) {
+                    const colorChanged = allUsers[idx].color_id !== updated.color_id;
                     allUsers[idx] = { ...allUsers[idx], ...updated };
                     renderContacts();
+                    if (colorChanged) {
+                        recolorRenderedMessages(updated.id);
+                    }
                 }
             })
         .subscribe();
@@ -1198,6 +1285,12 @@ document.addEventListener('touchstart', unlockAudio, { once: true });
 const audioToggleBtn = document.getElementById('audio-toggle');
 if (audioToggleBtn) {
     audioToggleBtn.addEventListener('click', toggleMute);
+}
+
+// Themes button
+const themesBtnEl = document.getElementById('themes-btn');
+if (themesBtnEl) {
+    themesBtnEl.addEventListener('click', cmdColorList);
 }
 
 // Sidebar toggle (mobile)
