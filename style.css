@@ -685,9 +685,15 @@ h1 {
 /* === Mobile Responsive (≤ 600px) === */
 @media (max-width: 600px) {
 
-    /* Show toggle button */
+    /* Show toggle button — large tap target */
     #sidebar-toggle {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 16px;
+        margin: -8px -4px -8px -8px;
     }
 
     /* Sidebar becomes fixed overlay */
@@ -696,8 +702,9 @@ h1 {
         left: 0;
         top: 0;
         height: 100vh;
-        width: 240px;
-        min-width: 240px;
+        height: 100dvh;
+        width: 260px;
+        min-width: 260px;
         z-index: 200;
         transform: translateX(-100%);
         transition: transform 0.2s ease;
@@ -721,30 +728,55 @@ h1 {
         width: 100%;
     }
 
+    /* Use dvh for full viewport on iOS */
+    #chat-view {
+        height: 100vh;
+        height: 100dvh;
+    }
+
     /* Larger touch targets for contacts */
     .contact {
         padding: 12px 16px;
         min-height: 44px;
     }
 
-    /* Chat header tighter */
+    /* Chat header */
     #chat-header {
         padding: 10px 14px;
         gap: 8px;
+        font-size: 12px;
+    }
+
+    #chat-status-label {
+        font-size: 10px;
     }
 
     /* Message feed */
     #message-feed {
-        padding: 14px;
+        padding: 12px;
     }
 
     .message {
-        font-size: 12.5px;
+        font-size: 12px;
+        word-break: break-word;
     }
 
-    /* Input area — comfortable touch target */
+    .message .msg-time {
+        font-size: 11px;
+    }
+
+    .message .msg-sender {
+        font-size: 11px;
+    }
+
+    .msg-admin-tag {
+        font-size: 9px;
+    }
+
+    /* Input area — safe area padding for iPhone home indicator */
     #input-area {
         padding: 10px 14px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
 
     #message-input {
