@@ -255,6 +255,73 @@ function cmdHelp() {
 }
 
 // =============================================
+// 3d. COMMAND HINTS
+// =============================================
+let cmdHintIdx = -1; // active hint index (-1 = none)
+
+function showCmdHints(filter) {
+    const hintsEl = document.getElementById('cmd-hints');
+    const entries = Object.entries(COMMANDS)
+        .filter(([name]) => name.startsWith(filter));
+
+    if (entries.length === 0) {
+        hideCmdHints();
+        return;
+    }
+
+    cmdHintIdx = -1;
+    hintsEl.innerHTML = entries.map(([name, c]) =>
+        `<div class="cmd-hint" data-cmd="${name}">` +
+        `<span class="cmd-hint-name">/${name}</span>` +
+        `<span class="cmd-hint-desc">${c.description}</span>` +
+        `</div>`
+    ).join('');
+
+    hintsEl.classList.remove('hidden');
+}
+
+function hideCmdHints() {
+    const hintsEl = document.getElementById('cmd-hints');
+    hintsEl.classList.add('hidden');
+    hintsEl.innerHTML = '';
+    cmdHintIdx = -1;
+}
+
+function selectCmdHint(name) {
+    const input = document.getElementById('message-input');
+    const needsArgs = name === 'status';
+    input.value = '/' + name + (needsArgs ? ' ' : '');
+    hideCmdHints();
+    input.focus();
+}
+
+function navigateCmdHints(direction) {
+    const items = document.querySelectorAll('#cmd-hints .cmd-hint');
+    if (items.length === 0) return false;
+
+    items.forEach(el => el.classList.remove('active'));
+
+    if (direction === 'down') {
+        cmdHintIdx = cmdHintIdx < items.length - 1 ? cmdHintIdx + 1 : 0;
+    } else {
+        cmdHintIdx = cmdHintIdx > 0 ? cmdHintIdx - 1 : items.length - 1;
+    }
+
+    items[cmdHintIdx].classList.add('active');
+    items[cmdHintIdx].scrollIntoView({ block: 'nearest' });
+    return true;
+}
+
+function confirmCmdHint() {
+    const items = document.querySelectorAll('#cmd-hints .cmd-hint');
+    if (cmdHintIdx >= 0 && cmdHintIdx < items.length) {
+        selectCmdHint(items[cmdHintIdx].dataset.cmd);
+        return true;
+    }
+    return false;
+}
+
+// =============================================
 // 4. UI / RENDER
 // =============================================
 function renderContacts() {
@@ -618,6 +685,7 @@ async function sendMessage() {
     inputHistoryIdx = -1;
     inputHistoryDraft = '';
 
+    hideCmdHints();
     if (await handleSlashCommand(body)) { input.value = ''; return; }
 
     if (viewMode === 'channel' && activeChannel) {
@@ -933,10 +1001,45 @@ document.getElementById('logout-btn').addEventListener('click', handleLogout);
 document.getElementById('send-btn').addEventListener('click', sendMessage);
 
 document.getElementById('message-input').addEventListener('input', () => {
-    if (document.getElementById('message-input').value.trim()) broadcastTyping();
+    const val = document.getElementById('message-input').value;
+    if (val.trim()) broadcastTyping();
+
+    // Command hints: show when input starts with "/" and has no space yet
+    if (val.startsWith('/') && !val.includes(' ')) {
+        const filter = val.slice(1).toLowerCase();
+        showCmdHints(filter);
+    } else {
+        hideCmdHints();
+    }
 });
 
 document.getElementById('message-input').addEventListener('keydown', e => {
+    const hintsVisible = !document.getElementById('cmd-hints').classList.contains('hidden');
+
+    // When hints are visible, intercept navigation keys
+    if (hintsVisible) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateCmdHints(e.key === 'ArrowDown' ? 'down' : 'up');
+            return;
+        }
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            if (cmdHintIdx === -1) navigateCmdHints('down');
+            confirmCmdHint();
+            return;
+        }
+        if (e.key === 'Enter') {
+            if (confirmCmdHint()) { e.preventDefault(); return; }
+            // If no hint selected, fall through to send
+        }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            hideCmdHints();
+            return;
+        }
+    }
+
     if (e.key === 'Enter') { sendMessage(); return; }
 
     const input = e.target;
@@ -981,6 +1084,12 @@ document.getElementById('password').addEventListener('keydown', e => {
 
 document.getElementById('username').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('password').focus();
+});
+
+// Command hint clicks
+document.getElementById('cmd-hints').addEventListener('click', e => {
+    const el = e.target.closest('.cmd-hint');
+    if (el) selectCmdHint(el.dataset.cmd);
 });
 
 // Contact clicks (event delegation — contacts are dynamic)

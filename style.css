@@ -676,6 +676,46 @@ h1 {
     animation: terminal-blink 0.6s steps(2, start) infinite;
 }
 
+/* === Command Hints === */
+#cmd-hints {
+    position: absolute;
+    bottom: 52px;
+    left: 20px;
+    right: 20px;
+    background: #0a0a0a;
+    border: 1px solid #1c1c1c;
+    z-index: 60;
+    max-height: 160px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1e1e1e transparent;
+}
+
+.cmd-hint {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.08s;
+}
+
+.cmd-hint:hover,
+.cmd-hint.active {
+    background: #141414;
+}
+
+.cmd-hint-name {
+    color: #7a9a6a;
+    white-space: nowrap;
+}
+
+.cmd-hint-desc {
+    color: #4a4a4a;
+    font-size: 11px;
+}
+
 /* === Input Area === */
 #input-area {
     display: flex;
@@ -966,6 +1006,13 @@ h1 {
 
     .msg-admin-tag {
         font-size: 9px;
+    }
+
+    /* Command hints on mobile */
+    #cmd-hints {
+        left: 14px;
+        right: 14px;
+        bottom: 48px;
     }
 
     /* Input area — safe area padding for iPhone home indicator */
