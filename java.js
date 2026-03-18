@@ -48,7 +48,7 @@ let inputHistoryDraft   = '';       // stash of unsent text when entering histor
 let isUserAtBottom      = true;     // auto-scroll tracking
 let newMsgCount         = 0;        // unread count while scrolled up
 let lockedMessages      = new Set(); // lock keys ("dm:id" or "ch:id") that survive /clear
-let lockChannel         = null;     // broadcast channel for lock sync
+let lockChannel         = null;     // realtime channel for lock sync (postgres UPDATE)
 let typingChannel       = null;     // broadcast channel for typing indicators
 let typingTimeout       = null;     // timeout to hide remote typing
 let lastTypingSent      = 0;        // throttle outgoing typing events
@@ -208,10 +208,6 @@ async function handleSlashCommand(body) {
     return true;
 }
 
-function lockKeyFromEl(el) {
-    return el.dataset.lockType + ':' + el.dataset.msgId;
-}
-
 function applyLockVisual(el, locked) {
     const tag = el.querySelector('.msg-lock-tag');
     const btn = el.querySelector('.msg-lock-btn');
@@ -226,62 +222,63 @@ function applyLockVisual(el, locked) {
     }
 }
 
-function toggleLock(elId, broadcast = true) {
+async function toggleLock(elId) {
     const el = document.getElementById(elId);
     if (!el || !el.dataset.msgId) return;
 
-    const lockKey = lockKeyFromEl(el);
+    const lockKey = el.dataset.lockType + ':' + el.dataset.msgId;
     const nowLocked = !lockedMessages.has(lockKey);
+    const table = el.dataset.lockType === 'ch' ? 'channel_messages' : 'messages';
 
-    if (nowLocked) {
-        lockedMessages.add(lockKey);
-    } else {
-        lockedMessages.delete(lockKey);
+    // Update in database — realtime subscription will handle the visual update
+    const { error } = await sb.from(table).update({ locked: nowLocked }).eq('id', el.dataset.msgId);
+    if (error) {
+        console.error('toggleLock DB error:', error);
+        appendSystemMsg('ERROR: COULD NOT TOGGLE LOCK');
+        return undefined;
     }
+
+    // Optimistic local update (realtime will confirm)
+    if (nowLocked) lockedMessages.add(lockKey); else lockedMessages.delete(lockKey);
     applyLockVisual(el, nowLocked);
-
-    // Broadcast to other users
-    if (broadcast && lockChannel) {
-        lockChannel.send({
-            type: 'broadcast',
-            event: 'lock',
-            payload: {
-                msg_id: el.dataset.msgId,
-                lock_type: el.dataset.lockType,
-                locked: nowLocked,
-                user_id: currentUser.id,
-            }
-        });
-    }
-
     return nowLocked;
 }
 
-function handleRemoteLock(payload) {
-    if (!currentUser || payload.user_id === currentUser.id) return;
+function handleLockUpdate(table, row) {
+    const lockType = table === 'channel_messages' ? 'ch' : 'dm';
+    const lockKey = lockType + ':' + row.id;
+    const el = document.querySelector(`.message[data-lock-type="${lockType}"][data-msg-id="${row.id}"]`);
 
-    const lockKey = payload.lock_type + ':' + payload.msg_id;
-    const el = document.querySelector(`.message[data-lock-type="${payload.lock_type}"][data-msg-id="${payload.msg_id}"]`);
-
-    if (payload.locked) {
+    if (row.locked) {
         lockedMessages.add(lockKey);
     } else {
         lockedMessages.delete(lockKey);
     }
 
-    if (el) applyLockVisual(el, payload.locked);
+    if (el) applyLockVisual(el, row.locked);
 }
 
 function subscribeToLocks() {
     lockChannel = sb
         .channel('lock-sync')
-        .on('broadcast', { event: 'lock' }, ({ payload }) => {
-            handleRemoteLock(payload);
-        })
+        .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'messages' },
+            (payload) => {
+                if (payload.old.locked !== payload.new.locked) {
+                    handleLockUpdate('messages', payload.new);
+                }
+            })
+        .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'channel_messages' },
+            (payload) => {
+                if (payload.old.locked !== payload.new.locked) {
+                    handleLockUpdate('channel_messages', payload.new);
+                }
+            })
         .subscribe();
 }
 
-function cmdLock(args) {
+async function cmdLock(args) {
     const feed = document.getElementById('message-feed');
     const messages = Array.from(feed.querySelectorAll('.message:not(.skeleton)'));
 
@@ -291,8 +288,8 @@ function cmdLock(args) {
             return;
         }
         const last = messages[messages.length - 1];
-        const isLocked = toggleLock(last.id);
-        appendSystemMsg(isLocked ? 'MESSAGE LOCKED' : 'MESSAGE UNLOCKED');
+        const isLocked = await toggleLock(last.id);
+        if (isLocked !== undefined) appendSystemMsg(isLocked ? 'MESSAGE LOCKED' : 'MESSAGE UNLOCKED');
         return;
     }
 
@@ -303,8 +300,8 @@ function cmdLock(args) {
     }
 
     const target = messages[num - 1];
-    const isLocked = toggleLock(target.id);
-    appendSystemMsg(isLocked ? `MESSAGE #${num} LOCKED` : `MESSAGE #${num} UNLOCKED`);
+    const isLocked = await toggleLock(target.id);
+    if (isLocked !== undefined) appendSystemMsg(isLocked ? `MESSAGE #${num} LOCKED` : `MESSAGE #${num} UNLOCKED`);
 }
 
 function cmdClear() {
@@ -514,7 +511,9 @@ function appendMessage(msg, animate = true) {
     el.dataset.lockType = lockType;
 
     const lockKey = lockType + ':' + msgDbId;
-    const isLocked = lockedMessages.has(lockKey);
+    // Check both DB field and local set (local set covers optimistic updates)
+    const isLocked = msg.locked || lockedMessages.has(lockKey);
+    if (isLocked) lockedMessages.add(lockKey);
 
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
