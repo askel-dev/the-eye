@@ -128,17 +128,27 @@ function cmdWho() {
 
 async function cmdStatus(args) {
     if (!args) {
-        appendSystemMsg('USAGE: /status <text>  (max 100 chars)');
+        appendSystemMsg('USAGE: /status <text>  — set status');
+        appendSystemMsg('       /status remove  — clear status');
         return;
     }
-    const text = args.slice(0, 100);
+    const isRemove = args.trim().toLowerCase() === 'remove';
+    const text = isRemove ? null : args.slice(0, 100);
     const { error } = await sb.from('profiles').update({ status_text: text }).eq('id', currentUser.id);
     if (error) {
         appendSystemMsg('ERROR SETTING STATUS');
         console.error('cmdStatus error:', error);
     } else {
-        appendSystemMsg('STATUS SET: ' + text);
+        updateSelfStatus(text);
+        appendSystemMsg(isRemove ? 'STATUS CLEARED' : 'STATUS SET: ' + text);
     }
+}
+
+function updateSelfStatus(statusText) {
+    const el = document.getElementById('self-status-text');
+    if (!el) return;
+    el.textContent = statusText || '';
+    el.style.display = statusText ? 'block' : 'none';
 }
 
 function cmdHelp() {
@@ -259,6 +269,8 @@ function updateHeader(contact, isOnline) {
     const statusLabel = document.getElementById('chat-status-label');
     statusLabel.textContent = isOnline ? '[ONLINE]' : '[OFFLINE]';
     statusLabel.className = isOnline ? 'online-label' : 'offline-label';
+    const dot = document.getElementById('chat-status-dot');
+    dot.className = isOnline ? 'status-dot online-dot' : 'status-dot offline-dot';
 }
 
 function setLoginError(msg) {
@@ -328,6 +340,11 @@ async function enterChat(userId, username) {
     document.getElementById('login-view').classList.add('hidden');
     document.getElementById('chat-view').classList.remove('hidden');
     document.body.classList.add('chat-mode');
+
+    // Populate self-info panel
+    document.getElementById('self-username').textContent = username;
+    const myProfile = allUsers.find(u => u.id === userId);
+    updateSelfStatus(myProfile ? myProfile.status_text : null);
 
     renderContacts();
     subscribeToMessages();
@@ -685,6 +702,8 @@ async function switchToChannel(channelName) {
     const statusLabel = document.getElementById('chat-status-label');
     statusLabel.textContent = '[PUBLIC]';
     statusLabel.className = 'online-label';
+    const dot = document.getElementById('chat-status-dot');
+    dot.className = 'status-dot online-dot';
 
     await loadChannelMessages(channelName);
 }

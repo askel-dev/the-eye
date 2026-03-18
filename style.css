@@ -271,6 +271,37 @@ h1 {
     filter: brightness(0) invert(0.22);
 }
 
+#self-info {
+    border-top: 1px solid #181818;
+    padding: 9px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+#self-info .status-dot {
+    position: static;
+    top: unset;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+#self-username {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #555;
+}
+
+#self-status-text {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #3a7a5a;
+    padding-left: 14px;
+    display: none;
+}
+
 #logout-btn {
     background: none;
     border: none;
@@ -284,7 +315,6 @@ h1 {
     text-align: left;
     width: 100%;
     transition: color 0.15s;
-    margin-top: auto;
     flex-shrink: 0;
 }
 
@@ -418,6 +448,27 @@ h1 {
 
 #chat-with-label {
     color: #c8c8c8;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+    flex-shrink: 0;
+}
+
+.status-dot.online-dot {
+    background-color: #3a7a5a;
+    box-shadow: 0 0 6px #3a7a5a;
+}
+
+.status-dot.offline-dot {
+    background-color: #333;
+    box-shadow: none;
 }
 
 #chat-status-label {
