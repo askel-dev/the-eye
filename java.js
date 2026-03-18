@@ -47,7 +47,8 @@ let inputHistoryIdx     = -1;       // -1 = not browsing history
 let inputHistoryDraft   = '';       // stash of unsent text when entering history
 let isUserAtBottom      = true;     // auto-scroll tracking
 let newMsgCount         = 0;        // unread count while scrolled up
-let lockedMessages      = new Set(); // lock keys ("dm:id" or "ch:id") that survive /clear
+let lockedMessages      = new Set(JSON.parse(localStorage.getItem('locked_msgs') || '[]'));
+function persistLockedMessages() { localStorage.setItem('locked_msgs', JSON.stringify(Array.from(lockedMessages))); }
 let lockChannel         = null;     // realtime channel for lock sync (postgres UPDATE)
 let typingChannel       = null;     // broadcast channel for typing indicators
 let typingTimeout       = null;     // timeout to hide remote typing
@@ -240,6 +241,7 @@ async function toggleLock(elId) {
 
     // Optimistic local update (realtime will confirm)
     if (nowLocked) lockedMessages.add(lockKey); else lockedMessages.delete(lockKey);
+    persistLockedMessages();
     applyLockVisual(el, nowLocked);
     return nowLocked;
 }
@@ -254,6 +256,7 @@ function handleLockUpdate(table, row) {
     } else {
         lockedMessages.delete(lockKey);
     }
+    persistLockedMessages();
 
     if (el) applyLockVisual(el, row.locked);
 }
@@ -537,7 +540,13 @@ function appendMessage(msg, animate = true) {
     const lockKey = lockType + ':' + msgDbId;
     // Check both DB field and local set (local set covers optimistic updates)
     const isLocked = msg.locked || lockedMessages.has(lockKey);
-    if (isLocked) lockedMessages.add(lockKey);
+    
+    if (isLocked && !lockedMessages.has(lockKey)) {
+        lockedMessages.add(lockKey);
+        persistLockedMessages();
+    } else if (isLocked) {
+        lockedMessages.add(lockKey);
+    }
 
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
