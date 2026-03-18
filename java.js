@@ -1,4 +1,6 @@
-// Set white favicon using canvas + filter
+// =============================================
+// FAVICON
+// =============================================
 (function() {
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -16,47 +18,27 @@
     img.src = 'assets/logo.png';
 })();
 
-const SoundBtn = document.getElementById('SoundBtn');
-SoundBtn.addEventListener('click', () => {
-    const audio = new Audio('assets/notif.mp3');
-    audio.play();
-});
+// =============================================
+// 1. CONFIG
+// =============================================
+const SUPABASE_URL  = 'https://afuwppfrljzmnbndizxz.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmdXdwcGZybGp6bW5ibmRpenh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDA4MzgsImV4cCI6MjA4OTQxNjgzOH0.-EK1da5r3n38YVs6pPPKMWiyWyzsVdGlUwX5iygY5LA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const users = {
-    Calle: {
-        status: 'online',
-        messages: [],
-        replies: [
-            'yase',
-            'bro... take care of me tho',
-            'nigga',
-            'mer snälla!',
-            'hej',
-            'käften hora',
-            'tack pappa',
-            'im new bro',
-        ]
-    },
-    Axel: {
-        status: 'online',
-        messages: [],
-        replies: [
-            'va?',
-            'hallå',
-            'ok',
-            'nej',
-            'lol',
-            'vad vill du',
-            'snacka senare',
-            'haha sure',
-        ]
-    }
-};
+// =============================================
+// 2. STATE
+// =============================================
+let currentUser     = null;      // { id, username }
+let activeContact   = null;      // { id, username }
+let allUsers        = [];        // [{ id, username }, ...]
+let onlineIds       = new Set(); // user IDs currently online
+let realtimeChannel = null;
+let presenceChannel = null;
+let renderedMsgIds  = new Set(); // dedup for self-echo
 
-let currentUser = 'anon';
-let activeContact = 'Calle';
-let autoReplyTimer = null;
-
+// =============================================
+// 3. UTILS
+// =============================================
 function nowTime() {
     return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
@@ -73,67 +55,378 @@ function scrollToBottom() {
     feed.scrollTop = feed.scrollHeight;
 }
 
-function renderMessages() {
+// =============================================
+// 4. UI / RENDER
+// =============================================
+function renderContacts() {
+    const list = document.querySelector('.contact-list');
+    list.innerHTML = '';
+
+    const others = allUsers.filter(u => u.id !== currentUser.id);
+
+    if (others.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'system-msg';
+        empty.textContent = '// NO CONTACTS';
+        list.appendChild(empty);
+        return;
+    }
+
+    for (const user of others) {
+        const isOnline = onlineIds.has(user.id);
+        const el = document.createElement('div');
+        el.className = 'contact' + (activeContact && activeContact.id === user.id ? ' active' : '');
+        el.dataset.userId = user.id;
+        el.innerHTML =
+            `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
+            `<span class="contact-name">${escapeHtml(user.username)}</span>` +
+            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>`;
+        list.appendChild(el);
+    }
+}
+
+function appendMessage(msg, animate = true) {
+    const feed = document.getElementById('message-feed');
+    const el = document.createElement('div');
+    const isSelf = msg.sender_id === currentUser.id;
+    el.className = 'message' + (isSelf ? ' self' : '');
+    if (!animate) el.style.animation = 'none';
+
+    const senderName = isSelf ? currentUser.username : (msg.sender ? msg.sender.username : '???');
+    const time = msg.created_at
+        ? new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        : nowTime();
+
+    el.innerHTML =
+        `<span class="msg-time">[${time}]</span>` +
+        ` <span class="msg-sender">${escapeHtml(senderName)}</span>` +
+        `<span class="msg-sep">></span>` +
+        `<span class="msg-text">${escapeHtml(msg.body)}</span>`;
+
+    feed.appendChild(el);
+    scrollToBottom();
+}
+
+function renderMessages(messages) {
     const feed = document.getElementById('message-feed');
     feed.innerHTML = '';
+    renderedMsgIds.clear();
 
     const sys = document.createElement('div');
     sys.className = 'system-msg';
-    sys.textContent = `// CONNECTION ESTABLISHED — ${activeContact}`;
+    sys.textContent = `// CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
     feed.appendChild(sys);
 
-    for (const msg of users[activeContact].messages) {
+    for (const msg of messages) {
+        renderedMsgIds.add(msg.id);
         appendMessage(msg, false);
     }
 
     scrollToBottom();
 }
 
-function appendMessage(msg, animate = true) {
-    const feed = document.getElementById('message-feed');
-    const el = document.createElement('div');
-    el.className = 'message' + (msg.sender === 'you' ? ' self' : '');
-    if (!animate) el.style.animation = 'none';
+function updateContactStatus(userId, isOnline) {
+    const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
+    if (!el) return;
+    const dot = el.querySelector('.status-dot');
+    const badge = el.querySelector('.contact-badge');
+    dot.className = 'status-dot ' + (isOnline ? 'online' : 'offline');
+    badge.textContent = isOnline ? '[ON]' : '[OFF]';
 
-    el.innerHTML =
-        `<span class="msg-time">[${msg.time}]</span>` +
-        ` <span class="msg-sender">${escapeHtml(msg.sender)}</span>` +
-        `<span class="msg-sep">></span>` +
-        `<span class="msg-text">${escapeHtml(msg.text)}</span>`;
-
-    feed.appendChild(el);
-    scrollToBottom();
+    if (activeContact && activeContact.id === userId) {
+        updateHeader(activeContact, isOnline);
+    }
 }
 
-function setTyping(show) {
-    const indicator = document.getElementById('typing-indicator');
-    indicator.classList.toggle('hidden', !show);
-    if (show) indicator.innerHTML = `${activeContact} is typing<span class="blink-cursor">_</span>`;
+function updateHeader(contact, isOnline) {
+    document.getElementById('chat-with-label').textContent = `// ${contact.username}`;
+    const statusLabel = document.getElementById('chat-status-label');
+    statusLabel.textContent = isOnline ? '[ONLINE]' : '[OFFLINE]';
+    statusLabel.className = isOnline ? 'online-label' : 'offline-label';
 }
 
-function switchContact(name) {
-    if (name === activeContact) return;
-    clearTimeout(autoReplyTimer);
-    setTyping(false);
-    activeContact = name;
+function setLoginError(msg) {
+    document.getElementById('login-error').textContent = msg;
+}
 
-    document.querySelectorAll('.contact').forEach(el => {
-        el.classList.toggle('active', el.dataset.user === name);
+// =============================================
+// 5. AUTH
+// =============================================
+async function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+        setLoginError('// ENTER USERNAME AND PASSWORD');
+        return;
+    }
+
+    setLoginError('');
+    const email = username.toLowerCase() + '@theeye.local';
+
+    let userId;
+
+    // Try login first
+    const { data: signInData, error: signInError } = await sb.auth.signInWithPassword({ email, password });
+
+    if (signInError) {
+        if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('invalid_credentials')) {
+            // Try signup
+            const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+                email,
+                password,
+                options: { data: { username } }
+            });
+
+            if (signUpError) {
+                if (signUpError.message.includes('already registered')) {
+                    setLoginError('// WRONG PASSWORD');
+                } else if (signUpError.message.toLowerCase().includes('unique') || signUpError.message.includes('duplicate')) {
+                    setLoginError('// USERNAME TAKEN');
+                } else {
+                    setLoginError('// ' + signUpError.message.toUpperCase());
+                }
+                return;
+            }
+
+            userId = signUpData.user.id;
+        } else {
+            setLoginError('// ' + signInError.message.toUpperCase());
+            return;
+        }
+    } else {
+        userId = signInData.user.id;
+    }
+
+    await enterChat(userId, username);
+}
+
+async function enterChat(userId, username) {
+    currentUser = { id: userId, username };
+
+    // Fetch all profiles
+    const { data: profiles } = await sb.from('profiles').select('id, username').order('username');
+    allUsers = profiles || [];
+
+    // Show chat view
+    document.getElementById('login-view').classList.add('hidden');
+    document.getElementById('chat-view').classList.remove('hidden');
+    document.body.classList.add('chat-mode');
+
+    renderContacts();
+    subscribeToMessages();
+    joinPresence();
+
+    // Auto-select first contact
+    const first = allUsers.find(u => u.id !== currentUser.id);
+    if (first) {
+        switchContact(first.id);
+    }
+
+    document.getElementById('message-input').focus();
+}
+
+async function handleLogout() {
+    await leavePresence();
+    unsubscribeAll();
+    await sb.auth.signOut();
+
+    currentUser = null;
+    activeContact = null;
+    allUsers = [];
+    onlineIds.clear();
+    renderedMsgIds.clear();
+
+    document.getElementById('chat-view').classList.add('hidden');
+    document.getElementById('login-view').classList.remove('hidden');
+    document.body.classList.remove('chat-mode');
+
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    setLoginError('');
+    document.getElementById('username').focus();
+}
+
+async function restoreSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    const username = session.user.user_metadata?.username || session.user.email.split('@')[0];
+    await enterChat(session.user.id, username);
+}
+
+// =============================================
+// 6. DATA
+// =============================================
+async function loadMessages(contactId) {
+    const me = currentUser.id;
+    const them = contactId;
+
+    const { data, error } = await sb
+        .from('messages')
+        .select('*, sender:profiles!sender_id(username)')
+        .or(`and(sender_id.eq.${me},recipient_id.eq.${them}),and(sender_id.eq.${them},recipient_id.eq.${me})`)
+        .order('created_at', { ascending: true })
+        .limit(200);
+
+    if (error) {
+        console.error('loadMessages error:', error);
+        return;
+    }
+
+    renderMessages(data || []);
+}
+
+async function sendMessage() {
+    const input = document.getElementById('message-input');
+    const body = input.value.trim();
+    if (!body || !activeContact) return;
+
+    input.value = '';
+
+    const { error } = await sb.from('messages').insert({
+        sender_id: currentUser.id,
+        recipient_id: activeContact.id,
+        body
     });
 
-    document.getElementById('chat-header').innerHTML =
-        `<span>// ${name}</span><span class="online-label">[ONLINE]</span>`;
-
-    renderMessages();
+    if (error) {
+        console.error('sendMessage error:', error);
+        input.value = body; // restore on failure
+    }
 }
 
-// === Contact switching ===
-document.querySelectorAll('.contact').forEach(el => {
-    el.addEventListener('click', () => switchContact(el.dataset.user));
-});
+// =============================================
+// 7. REALTIME
+// =============================================
+function subscribeToMessages() {
+    realtimeChannel = sb
+        .channel('messages-for-' + currentUser.id)
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${currentUser.id}` },
+            handleIncomingMessage)
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages', filter: `sender_id=eq.${currentUser.id}` },
+            handleIncomingMessage)
+        .subscribe();
+}
 
-// === Login ===
+async function handleIncomingMessage(payload) {
+    const msg = payload.new;
+
+    // Deduplicate self-echo
+    if (renderedMsgIds.has(msg.id)) return;
+    renderedMsgIds.add(msg.id);
+
+    // Fetch sender username if not embedded
+    const sender = allUsers.find(u => u.id === msg.sender_id);
+    msg.sender = sender ? { username: sender.username } : { username: '???' };
+
+    const isActiveConversation =
+        activeContact &&
+        ((msg.sender_id === activeContact.id && msg.recipient_id === currentUser.id) ||
+         (msg.sender_id === currentUser.id && msg.recipient_id === activeContact.id));
+
+    if (isActiveConversation) {
+        appendMessage(msg);
+    } else {
+        // Unread badge on sidebar contact
+        const contactId = msg.sender_id === currentUser.id ? msg.recipient_id : msg.sender_id;
+        const el = document.querySelector(`.contact[data-user-id="${contactId}"]`);
+        if (el) {
+            let badge = el.querySelector('.contact-unread');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'contact-unread';
+                el.appendChild(badge);
+            }
+            const count = (parseInt(badge.dataset.count || '0')) + 1;
+            badge.dataset.count = count;
+            badge.textContent = `[${count}]`;
+        }
+    }
+}
+
+function unsubscribeAll() {
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+    if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
+}
+
+// =============================================
+// 8. PRESENCE
+// =============================================
+function joinPresence() {
+    presenceChannel = sb.channel('online-users', {
+        config: { presence: { key: currentUser.id } }
+    });
+
+    presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            onlineIds = new Set(Object.keys(presenceChannel.presenceState()));
+            renderContacts();
+        })
+        .on('presence', { event: 'join' }, ({ key }) => {
+            onlineIds.add(key);
+            updateContactStatus(key, true);
+        })
+        .on('presence', { event: 'leave' }, ({ key }) => {
+            onlineIds.delete(key);
+            updateContactStatus(key, false);
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await presenceChannel.track({ online_at: new Date().toISOString() });
+            }
+        });
+}
+
+async function leavePresence() {
+    if (presenceChannel) {
+        await presenceChannel.untrack();
+        sb.removeChannel(presenceChannel);
+        presenceChannel = null;
+    }
+}
+
+// =============================================
+// 9. CONTACT SWITCHING
+// =============================================
+async function switchContact(userId) {
+    if (activeContact && activeContact.id === userId) return;
+
+    const contact = allUsers.find(u => u.id === userId);
+    if (!contact) return;
+
+    activeContact = contact;
+
+    // Clear unread badge
+    const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
+    if (el) {
+        const badge = el.querySelector('.contact-unread');
+        if (badge) badge.remove();
+    }
+
+    // Update active class
+    document.querySelectorAll('.contact').forEach(c => {
+        c.classList.toggle('active', c.dataset.userId === userId);
+    });
+
+    updateHeader(contact, onlineIds.has(userId));
+    await loadMessages(userId);
+}
+
+// =============================================
+// 10. EVENT LISTENERS
+// =============================================
 document.getElementById('login-btn').addEventListener('click', handleLogin);
+
+document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+document.getElementById('message-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage();
+});
 
 document.getElementById('password').addEventListener('keydown', e => {
     if (e.key === 'Enter') handleLogin();
@@ -143,67 +436,18 @@ document.getElementById('username').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('password').focus();
 });
 
-function handleLogin() {
-    const val = document.getElementById('username').value.trim();
-    currentUser = val || 'anon';
-
-    document.getElementById('login-view').classList.add('hidden');
-    document.getElementById('chat-view').classList.remove('hidden');
-    document.body.classList.add('chat-mode');
-
-    renderMessages();
-    document.getElementById('message-input').focus();
-}
-
-// === Logout ===
-document.getElementById('logout-btn').addEventListener('click', () => {
-    clearTimeout(autoReplyTimer);
-    currentUser = 'anon';
-
-    document.getElementById('chat-view').classList.add('hidden');
-    document.getElementById('login-view').classList.remove('hidden');
-    document.body.classList.remove('chat-mode');
-
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    setTyping(false);
-
-    document.getElementById('username').focus();
+// Contact clicks (event delegation — contacts are dynamic)
+document.querySelector('.contact-list').addEventListener('click', e => {
+    const el = e.target.closest('.contact');
+    if (el && el.dataset.userId) switchContact(el.dataset.userId);
 });
 
-// === Send Message ===
-document.getElementById('send-btn').addEventListener('click', sendMessage);
-
-document.getElementById('message-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendMessage();
+// Sound button
+document.getElementById('SoundBtn').addEventListener('click', () => {
+    new Audio('assets/notif.mp3').play();
 });
 
-function sendMessage() {
-    const input = document.getElementById('message-input');
-    const text = input.value.trim();
-    if (!text) return;
-
-    const contact = users[activeContact];
-    const msg = { sender: 'you', text, time: nowTime() };
-    contact.messages.push(msg);
-    appendMessage(msg);
-    input.value = '';
-
-    clearTimeout(autoReplyTimer);
-    const repliedBy = activeContact;
-    const thinkDelay = 1200 + Math.random() * 1600;
-    autoReplyTimer = setTimeout(() => {
-        if (activeContact !== repliedBy) return;
-        setTyping(true);
-        const typeDelay = 700 + Math.random() * 1100;
-        autoReplyTimer = setTimeout(() => {
-            if (activeContact !== repliedBy) return;
-            setTyping(false);
-            const replies = users[repliedBy].replies;
-            const reply = replies[Math.floor(Math.random() * replies.length)];
-            const replyMsg = { sender: repliedBy, text: reply, time: nowTime() };
-            users[repliedBy].messages.push(replyMsg);
-            appendMessage(replyMsg);
-        }, typeDelay);
-    }, thinkDelay);
-}
+// =============================================
+// BOOT
+// =============================================
+restoreSession();

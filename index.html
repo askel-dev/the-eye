@@ -19,6 +19,7 @@
         <div id="login-form">
             <input type="text" id="username" placeholder="username" autocomplete="off">
             <input type="password" id="password" placeholder="password">
+            <div id="login-error"></div>
             <button id="login-btn" class="enter-btn"><span class="bracket left">[</span>&nbsp;ENTER<span class="cursor">_</span>&nbsp;<span class="bracket right">]</span></button>
             <button class="SoundBtn" id="SoundBtn">oouoo</button>
         </div>
@@ -32,25 +33,14 @@
                 <img src="assets/logo.png" alt="Logo" class="sidebar-logo" />
                 <span>// CONTACTS</span>
             </div>
-            <div class="contact-list">
-                <div class="contact active" data-user="Calle">
-                    <span class="status-dot online"></span>
-                    <span class="contact-name">Calle</span>
-                    <span class="contact-badge">[ON]</span>
-                </div>
-                <div class="contact" data-user="Axel">
-                    <span class="status-dot online"></span>
-                    <span class="contact-name">Axel</span>
-                    <span class="contact-badge">[ON]</span>
-                </div>
-            </div>
+            <div class="contact-list"></div>
             <button id="logout-btn"><span class="bracket left">[</span>&nbsp;EXIT<span class="bracket right">]</span></button>
         </div>
 
         <div id="chat-main">
             <div id="chat-header">
-                <span>// Calle</span>
-                <span class="online-label">[ONLINE]</span>
+                <span id="chat-with-label">// ...</span>
+                <span id="chat-status-label" class="online-label">[ONLINE]</span>
             </div>
 
             <div id="message-feed"></div>
@@ -73,6 +63,7 @@
     </style>
     <div id="watermark">made by cryptoler</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="java.js"></script>
 </body>
 </html>

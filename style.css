@@ -105,6 +105,21 @@ h1 {
     max-width: 380px;
 }
 
+#login-error {
+    font-size: 11px;
+    color: #7a3a3a;
+    text-align: center;
+    letter-spacing: 0.08em;
+    min-height: 16px;
+    margin-bottom: 6px;
+}
+
+.contact-unread {
+    font-size: 10px;
+    color: #4a7a6a;
+    margin-left: auto;
+}
+
 #username {
     animation: emerge-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.45s;
 }
