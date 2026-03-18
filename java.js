@@ -593,11 +593,12 @@ function renderContacts() {
     for (const user of others) {
         const isOnline = onlineIds.has(user.id);
         const el = document.createElement('div');
+        const userColor = getColorHex(user.color_id);
         el.className = 'contact' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
             `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
-            `<span class="contact-name">${escapeHtml(user.username)}</span>` +
+            `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
             `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>` +
             (user.status_text ? `<span class="contact-status">${escapeHtml(user.status_text)}</span>` : '');
         list.appendChild(el);
@@ -737,7 +738,9 @@ function updateContactStatus(userId, isOnline) {
 }
 
 function updateHeader(contact, isOnline) {
-    document.getElementById('chat-with-label').textContent = `// ${contact.username}`;
+    const contactColor = getColorHex(contact.color_id);
+    const headerLabel = document.getElementById('chat-with-label');
+    headerLabel.innerHTML = `// <span style="color:${contactColor}">${escapeHtml(contact.username)}</span>`;
     const statusLabel = document.getElementById('chat-status-label');
     statusLabel.textContent = isOnline ? '[ONLINE]' : '[OFFLINE]';
     statusLabel.className = isOnline ? 'online-label' : 'offline-label';
