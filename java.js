@@ -36,6 +36,7 @@ let realtimeChannel = null;
 let presenceChannel = null;
 let profilesChannel = null;
 let renderedMsgIds  = new Set(); // dedup for self-echo
+let conversationCache = new Map(); // userId|channelName → messages[]
 let audioUnlocked   = false;
 let notifAudio      = new Audio('assets/notif.mp3');
 let viewMode        = 'dm';       // 'dm' or 'channel'
@@ -230,6 +231,20 @@ function appendMessage(msg, animate = true) {
     scrollToBottom();
 }
 
+function renderSkeleton() {
+    const feed = document.getElementById('message-feed');
+    feed.innerHTML = '';
+    renderedMsgIds.clear();
+    for (let i = 0; i < 6; i++) {
+        const el = document.createElement('div');
+        el.className = 'message skeleton';
+        el.innerHTML =
+            `<span class="skel-line skel-short"></span>` +
+            `<span class="skel-line skel-long"></span>`;
+        feed.appendChild(el);
+    }
+}
+
 function renderMessages(messages) {
     const feed = document.getElementById('message-feed');
     feed.innerHTML = '';
@@ -398,7 +413,17 @@ async function restoreSession() {
 async function loadMessages(contactId) {
     const me = currentUser.id;
     const them = contactId;
+    const cacheKey = contactId;
 
+    // Render cached messages instantly if available
+    const cached = conversationCache.get(cacheKey);
+    if (cached) {
+        renderMessages(cached);
+    } else {
+        renderSkeleton();
+    }
+
+    // Fetch fresh data in background
     const { data, error } = await sb
         .from('messages')
         .select('*')
@@ -411,16 +436,29 @@ async function loadMessages(contactId) {
         return;
     }
 
-    // Attach sender info from allUsers since there's no FK to profiles
-    for (const msg of (data || [])) {
+    const messages = data || [];
+    for (const msg of messages) {
         const sender = allUsers.find(u => u.id === msg.sender_id);
         msg.sender = sender ? { username: sender.username } : { username: '???' };
     }
 
-    renderMessages(data || []);
+    // Only re-render if this contact is still active
+    if (viewMode === 'dm' && activeContact && activeContact.id === contactId) {
+        conversationCache.set(cacheKey, messages);
+        renderMessages(messages);
+    }
 }
 
 async function loadChannelMessages(channelName) {
+    const cacheKey = 'ch:' + channelName;
+
+    const cached = conversationCache.get(cacheKey);
+    if (cached) {
+        renderMessages(cached);
+    } else {
+        renderSkeleton();
+    }
+
     const { data, error } = await sb
         .from('channel_messages')
         .select('*')
@@ -433,12 +471,16 @@ async function loadChannelMessages(channelName) {
         return;
     }
 
-    for (const msg of (data || [])) {
+    const messages = data || [];
+    for (const msg of messages) {
         const sender = allUsers.find(u => u.id === msg.sender_id);
         msg.sender = sender ? { username: sender.username } : { username: '???' };
     }
 
-    renderMessages(data || []);
+    if (viewMode === 'channel' && activeChannel === channelName) {
+        conversationCache.set(cacheKey, messages);
+        renderMessages(messages);
+    }
 }
 
 async function sendMessage() {
@@ -502,6 +544,11 @@ async function handleIncomingMessage(payload) {
         activeContact &&
         ((msg.sender_id === activeContact.id && msg.recipient_id === currentUser.id) ||
          (msg.sender_id === currentUser.id && msg.recipient_id === activeContact.id));
+
+    // Update cache for this conversation
+    const dmCacheKey = msg.sender_id === currentUser.id ? msg.recipient_id : msg.sender_id;
+    const cached = conversationCache.get(dmCacheKey);
+    if (cached) cached.push(msg);
 
     if (isActiveConversation) {
         appendMessage(msg);
@@ -578,6 +625,11 @@ function handleIncomingChannelMessage(payload) {
 
     const sender = allUsers.find(u => u.id === msg.sender_id);
     msg.sender = sender ? { username: sender.username } : { username: '???' };
+
+    // Update channel cache
+    const chCacheKey = 'ch:' + msg.channel;
+    const chCached = conversationCache.get(chCacheKey);
+    if (chCached) chCached.push(msg);
 
     if (viewMode === 'channel' && activeChannel === msg.channel) {
         appendMessage(msg);

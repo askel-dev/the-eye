@@ -41,6 +41,27 @@
     }
 }
 
+/* === Skeleton loading === */
+@keyframes skel-pulse {
+    0%, 100% { opacity: 0.08; }
+    50% { opacity: 0.18; }
+}
+.message.skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+}
+.skel-line {
+    display: block;
+    height: 12px;
+    border-radius: 3px;
+    background: #9a9a9a;
+    animation: skel-pulse 1.2s ease-in-out infinite;
+}
+.skel-short { width: 90px; }
+.skel-long  { width: 60%; }
+
 body {
     display: flex;
     flex-direction: column;
@@ -783,8 +804,14 @@ h1 {
     }
 
     #message-input {
-        min-height: 44px;
+        min-height: 36px;
+        height: 36px;
         font-size: 16px; /* prevents iOS zoom on focus */
+    }
+
+    #input-area {
+        padding: 6px 14px;
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
     }
 
     /* Hide watermark on mobile */
