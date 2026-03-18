@@ -47,7 +47,8 @@ let inputHistoryIdx     = -1;       // -1 = not browsing history
 let inputHistoryDraft   = '';       // stash of unsent text when entering history
 let isUserAtBottom      = true;     // auto-scroll tracking
 let newMsgCount         = 0;        // unread count while scrolled up
-let lockedMessages      = new Set(); // message element IDs that survive /clear
+let lockedMessages      = new Set(); // lock keys ("dm:id" or "ch:id") that survive /clear
+let lockChannel         = null;     // broadcast channel for lock sync
 let typingChannel       = null;     // broadcast channel for typing indicators
 let typingTimeout       = null;     // timeout to hide remote typing
 let lastTypingSent      = 0;        // throttle outgoing typing events
@@ -207,23 +208,77 @@ async function handleSlashCommand(body) {
     return true;
 }
 
-function toggleLock(elId) {
-    const el = document.getElementById(elId);
-    if (!el) return;
+function lockKeyFromEl(el) {
+    return el.dataset.lockType + ':' + el.dataset.msgId;
+}
+
+function applyLockVisual(el, locked) {
     const tag = el.querySelector('.msg-lock-tag');
     const btn = el.querySelector('.msg-lock-btn');
-
-    if (lockedMessages.has(elId)) {
-        lockedMessages.delete(elId);
-        el.classList.remove('locked');
-        tag.classList.add('hidden');
-        btn.textContent = '[LOCK]';
-    } else {
-        lockedMessages.add(elId);
+    if (locked) {
         el.classList.add('locked');
         tag.classList.remove('hidden');
         btn.textContent = '[UNLOCK]';
+    } else {
+        el.classList.remove('locked');
+        tag.classList.add('hidden');
+        btn.textContent = '[LOCK]';
     }
+}
+
+function toggleLock(elId, broadcast = true) {
+    const el = document.getElementById(elId);
+    if (!el || !el.dataset.msgId) return;
+
+    const lockKey = lockKeyFromEl(el);
+    const nowLocked = !lockedMessages.has(lockKey);
+
+    if (nowLocked) {
+        lockedMessages.add(lockKey);
+    } else {
+        lockedMessages.delete(lockKey);
+    }
+    applyLockVisual(el, nowLocked);
+
+    // Broadcast to other users
+    if (broadcast && lockChannel) {
+        lockChannel.send({
+            type: 'broadcast',
+            event: 'lock',
+            payload: {
+                msg_id: el.dataset.msgId,
+                lock_type: el.dataset.lockType,
+                locked: nowLocked,
+                user_id: currentUser.id,
+            }
+        });
+    }
+
+    return nowLocked;
+}
+
+function handleRemoteLock(payload) {
+    if (!currentUser || payload.user_id === currentUser.id) return;
+
+    const lockKey = payload.lock_type + ':' + payload.msg_id;
+    const el = document.querySelector(`.message[data-lock-type="${payload.lock_type}"][data-msg-id="${payload.msg_id}"]`);
+
+    if (payload.locked) {
+        lockedMessages.add(lockKey);
+    } else {
+        lockedMessages.delete(lockKey);
+    }
+
+    if (el) applyLockVisual(el, payload.locked);
+}
+
+function subscribeToLocks() {
+    lockChannel = sb
+        .channel('lock-sync')
+        .on('broadcast', { event: 'lock' }, ({ payload }) => {
+            handleRemoteLock(payload);
+        })
+        .subscribe();
 }
 
 function cmdLock(args) {
@@ -231,14 +286,12 @@ function cmdLock(args) {
     const messages = Array.from(feed.querySelectorAll('.message:not(.skeleton)'));
 
     if (!args) {
-        // Lock the last message
         if (messages.length === 0) {
             appendSystemMsg('NO MESSAGES TO LOCK');
             return;
         }
         const last = messages[messages.length - 1];
-        toggleLock(last.id);
-        const isLocked = lockedMessages.has(last.id);
+        const isLocked = toggleLock(last.id);
         appendSystemMsg(isLocked ? 'MESSAGE LOCKED' : 'MESSAGE UNLOCKED');
         return;
     }
@@ -250,8 +303,7 @@ function cmdLock(args) {
     }
 
     const target = messages[num - 1];
-    toggleLock(target.id);
-    const isLocked = lockedMessages.has(target.id);
+    const isLocked = toggleLock(target.id);
     appendSystemMsg(isLocked ? `MESSAGE #${num} LOCKED` : `MESSAGE #${num} UNLOCKED`);
 }
 
@@ -271,8 +323,11 @@ function cmdClear() {
     locked.forEach(el => {
         feed.appendChild(el);
         // Re-add their IDs to renderedMsgIds so they don't get duped
-        const msgIdMatch = el.id.match(/^msg-(.+)$/);
-        if (msgIdMatch) renderedMsgIds.add(msgIdMatch[1]);
+        const dbId = el.dataset.msgId;
+        if (dbId) {
+            const dedupKey = el.dataset.lockType === 'ch' ? 'ch-' + dbId : dbId;
+            renderedMsgIds.add(dedupKey);
+        }
     });
 
     appendSystemMsg(locked.length > 0
@@ -450,18 +505,27 @@ function appendMessage(msg, animate = true) {
         ? new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
         : nowTime();
 
-    // Unique element ID for lock tracking
-    const elId = 'msg-' + (msg.id || Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+    // Lock tracking: store DB id and table type on the element
+    const msgDbId = msg.id || (Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+    const lockType = msg.channel ? 'ch' : 'dm';
+    const elId = 'msg-' + lockType + '-' + msgDbId;
     el.id = elId;
+    el.dataset.msgId = msgDbId;
+    el.dataset.lockType = lockType;
+
+    const lockKey = lockType + ':' + msgDbId;
+    const isLocked = lockedMessages.has(lockKey);
 
     el.innerHTML =
         `<span class="msg-time">[${time}]</span>` +
         ` <span class="msg-sender">${escapeHtml(senderName)}</span>` +
         (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
-        `<span class="msg-lock-tag hidden">[LOCKED]</span>` +
+        `<span class="msg-lock-tag${isLocked ? '' : ' hidden'}">[LOCKED]</span>` +
         `<span class="msg-sep">></span>` +
         `<span class="msg-text">${escapeHtml(msg.body)}</span>` +
-        `<button class="msg-lock-btn" title="Lock message">[LOCK]</button>`;
+        `<button class="msg-lock-btn" title="Lock message">${isLocked ? '[UNLOCK]' : '[LOCK]'}</button>`;
+
+    if (isLocked) el.classList.add('locked');
 
     // Lock button click
     el.querySelector('.msg-lock-btn').addEventListener('click', (e) => {
@@ -636,6 +700,7 @@ async function enterChat(userId, username) {
     subscribeToProfiles();
     subscribeToChannelMessages();
     subscribeToTyping();
+    subscribeToLocks();
     joinPresence();
 
     // Auto-select first contact
@@ -657,6 +722,7 @@ async function handleLogout() {
     allUsers = [];
     onlineIds.clear();
     renderedMsgIds.clear();
+    lockedMessages.clear();
     viewMode = 'dm';
     activeChannel = null;
 
@@ -943,6 +1009,7 @@ function unsubscribeAll() {
     if (profilesChannel) { sb.removeChannel(profilesChannel); profilesChannel = null; }
     if (channelRealtimeChannel) { sb.removeChannel(channelRealtimeChannel); channelRealtimeChannel = null; }
     if (typingChannel) { sb.removeChannel(typingChannel); typingChannel = null; }
+    if (lockChannel) { sb.removeChannel(lockChannel); lockChannel = null; }
 }
 
 // =============================================
