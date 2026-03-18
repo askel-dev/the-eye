@@ -690,9 +690,10 @@ h1 {
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 52px;
-        min-height: 52px;
-        font-size: 20px;
+        min-width: 56px;
+        min-height: 56px;
+        font-size: 24px;
+        color: #7a8a9a;
         margin: -14px -4px -14px -10px;
     }
 
@@ -740,9 +741,10 @@ h1 {
         min-height: 44px;
     }
 
-    /* Chat header — tall and easy to interact with */
+    /* Chat header — tall and easy to interact with, safe-area for notch/dynamic island */
     #chat-header {
         padding: 16px 18px;
+        padding-top: max(22px, env(safe-area-inset-top));
         gap: 10px;
         font-size: 13px;
         min-height: 54px;
