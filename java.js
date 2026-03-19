@@ -228,9 +228,9 @@ function appendSystemMsg(text, swatchColor = null) {
     if (swatchColor) {
         // Render the ██ swatch in the actual color, rest in normal system-msg color
         const colored = text.replace('██', `<span style="color:${swatchColor};font-style:normal">██</span>`);
-        el.innerHTML = '// ' + colored;
+        el.innerHTML = colored;
     } else {
-        el.textContent = '// ' + text;
+        el.textContent = text;
     }
     feed.appendChild(el);
     scrollToBottom();
@@ -240,7 +240,7 @@ function appendSystemMsgHtml(html) {
     const feed = document.getElementById('message-feed');
     const el = document.createElement('div');
     el.className = 'system-msg';
-    el.innerHTML = '// ' + html;
+    el.innerHTML = html;
     feed.appendChild(el);
     scrollToBottom();
 }
@@ -742,7 +742,7 @@ function appendMessage(msg, animate = true) {
     }
 
     el.innerHTML =
-        `<span class="msg-time">[${time}]</span>` +
+        `<span class="msg-time">${time}</span>` +
         ` <span class="msg-sender" style="color:${senderColor}">${escapeHtml(senderName)}</span>` +
         (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
         `<span class="msg-lock-tag${isLocked ? '' : ' hidden'}">[LOCKED]</span>` +
@@ -800,8 +800,8 @@ function renderMessages(messages) {
     const sys = document.createElement('div');
     sys.className = 'system-msg';
     sys.textContent = viewMode === 'channel'
-        ? `// PUBLIC CHANNEL — #${activeChannel}`
-        : `// CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
+        ? `PUBLIC CHANNEL — #${activeChannel}`
+        : `CONNECTION ESTABLISHED — ${activeContact ? activeContact.username : '...'}`;
     feed.appendChild(sys);
 
     let lastDate = null;

@@ -64,6 +64,13 @@
     --scrollbar-thumb: #222;
     --scrollbar-track: #1e1e1e;
 
+    /* Own messages */
+    --msg-own-border: rgba(58, 122, 90, 0.18);
+    --msg-own-bg: rgba(58, 122, 90, 0.05);
+
+    /* System message divider */
+    --system-divider: rgba(138, 122, 58, 0.35);
+
     /* Misc */
     --offline-dot: #2a2a2a;
     --offline-dot-large: #333;
@@ -669,6 +676,8 @@ h1 {
 
 .message .msg-time {
     color: var(--text-dim);
+    font-size: 11px;
+    opacity: 0.6;
 }
 
 .message .msg-sender {
@@ -694,6 +703,12 @@ h1 {
 
 .message.self .msg-text {
     color: var(--text-msg-self);
+}
+
+.message.self {
+    border-left: 2px solid var(--msg-own-border);
+    background: var(--msg-own-bg);
+    padding-left: 7px;
 }
 
 /* === Locked Messages === */
@@ -752,12 +767,27 @@ h1 {
 }
 
 .system-msg {
-    font-size: 11px;
-    color: var(--color-system-msg);
-    letter-spacing: 0.1em;
-    padding: 6px 0 10px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    padding: 0;
+    margin: 10px 0;
     animation: emerge-up 0.3s ease both;
     font-style: italic;
+    text-transform: lowercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+.system-msg::before,
+.system-msg::after {
+    content: '';
+    flex: 1;
+    max-width: 120px;
+    height: 1px;
+    background: var(--system-divider);
 }
 
 /* Color swatch — used in /color list output */
@@ -1254,6 +1284,9 @@ h1 {
     --offline-dot-large: #2a2a3a;
     --contact-badge-off: #1e1e2e;
     --contact-unread: #4a6a8a;
+    --msg-own-border: rgba(74, 106, 154, 0.18);
+    --msg-own-bg: rgba(74, 106, 154, 0.05);
+    --system-divider: rgba(106, 122, 154, 0.35);
     --sidebar-logo-filter: brightness(0) invert(0.18);
 }
 
@@ -1320,6 +1353,9 @@ h1 {
     --offline-dot-large: #0e3a0e;
     --contact-badge-off: #081808;
     --contact-unread: #22aa22;
+    --msg-own-border: rgba(34, 170, 34, 0.18);
+    --msg-own-bg: rgba(34, 170, 34, 0.05);
+    --system-divider: rgba(34, 136, 34, 0.35);
     --sidebar-logo-filter: brightness(0) invert(0.15);
 }
 
@@ -1386,6 +1422,9 @@ h1 {
     --offline-dot-large: #3a2a0e;
     --contact-badge-off: #181000;
     --contact-unread: #aa8822;
+    --msg-own-border: rgba(170, 136, 34, 0.18);
+    --msg-own-bg: rgba(170, 136, 34, 0.05);
+    --system-divider: rgba(136, 136, 34, 0.35);
     --sidebar-logo-filter: brightness(0) invert(0.15);
 }
 
@@ -1453,5 +1492,8 @@ h1 {
     --contact-badge-off: #c8c8c8;
     --contact-unread: #2a6a4a;
     --logo-filter: brightness(0) invert(0);
+    --msg-own-border: rgba(42, 106, 74, 0.2);
+    --msg-own-bg: rgba(42, 106, 74, 0.06);
+    --system-divider: rgba(106, 106, 42, 0.3);
     --sidebar-logo-filter: brightness(0) invert(0.7);
 }
