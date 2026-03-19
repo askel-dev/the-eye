@@ -1,83 +1,76 @@
 /* === Theme Variables === */
 :root {
     /* Backgrounds */
-    --bg-primary: #0f0f0f;
-    --bg-sidebar: #0a0a0a;
-    --bg-hover: #111;
-    --bg-hint-hover: #141414;
+    --bg-primary: #e8e8e8;
+    --bg-sidebar: #dedede;
+    --bg-hover: #d0d0d0;
+    --bg-hint-hover: #c8c8c8;
 
     /* Text */
-    --text-primary: #9a9a9a;
-    --text-bright: #c8c8c8;
-    --text-white: #ffffff;
-    --text-msg: #d1d5db;
-    --text-msg-self: #e5e7eb;
-    --text-input: #b0b0b0;
-    --text-dim: #4a4a4a;
-    --text-dimmer: #3a3a3a;
-    --text-muted: #484848;
-    --text-muted-hover: #7a7a7a;
-    --text-contact-active: #b8b8b8;
-    --text-sidebar-header: #383838;
-    --text-sidebar-btn: #303030;
-    --text-sidebar-btn-hover: #888;
-    --text-self-username: #505050;
-    --text-placeholder: #525252;
-    --text-filter-placeholder: #2e2e2e;
-    --text-watermark: #2a2a2a;
-    --text-help-desc: #5a5a5a;
+    --text-primary: #4a4a4a;
+    --text-bright: #1a1a1a;
+    --text-white: #000000;
+    --text-msg: #1a1a1a;
+    --text-msg-self: #0a0a0a;
+    --text-input: #3a3a3a;
+    --text-dim: #8a8a8a;
+    --text-dimmer: #9a9a9a;
+    --text-muted: #7a7a7a;
+    --text-muted-hover: #4a4a4a;
+    --text-contact-active: #1a1a1a;
+    --text-sidebar-header: #9a9a9a;
+    --text-sidebar-btn: #aaaaaa;
+    --text-sidebar-btn-hover: #4a4a4a;
+    --text-self-username: #7a7a7a;
+    --text-placeholder: #9a9a9a;
+    --text-filter-placeholder: #b0b0b0;
+    --text-watermark: #c8c8c8;
+    --text-help-desc: #7a7a7a;
 
     /* Accent (teal/green) */
-    --accent: #3a7a5a;
-    --accent-glow: #3a7a5a88;
-    --accent-light: #4a9a7a;
-    --accent-lighter: #6acaaa;
-    --accent-dim: #2a5a45;
-    --accent-dimmer: #2a5040;
-    --accent-channel: #4a7a6a;
-    --accent-channel-active: #6aaa8a;
-    --accent-channel-badge: #3a5a4a;
-    --accent-cmd: #7a9a6a;
+    --accent: #2a6a4a;
+    --accent-glow: #2a6a4a44;
+    --accent-light: #1a5a3a;
+    --accent-lighter: #0a4a2a;
+    --accent-dim: #5a9a7a;
+    --accent-dimmer: #7aaa8a;
+    --accent-channel: #2a6a4a;
+    --accent-channel-active: #1a5a3a;
+    --accent-channel-badge: #5a9a7a;
+    --accent-cmd: #2a6a4a;
 
     /* Borders */
-    --border-primary: #1c1c1c;
-    --border-secondary: #181818;
-    --border-input: #2a2a2a;
+    --border-primary: #c0c0c0;
+    --border-secondary: #cccccc;
+    --border-input: #b0b0b0;
     --border-input-focus: #666;
 
     /* Semantic */
-    --color-error: #7a3a3a;
-    --color-error-hover: #aa4a4a;
-    --color-admin-tag: #9a6a6a;
-    --color-login-btn: #7a8a9a;
-    --color-send-btn: #304a5a;
-    --color-system-msg: #8a7a3a;
+    --color-error: #aa3a3a;
+    --color-error-hover: #cc4a4a;
+    --color-admin-tag: #8a5a5a;
+    --color-login-btn: #4a5a6a;
+    --color-send-btn: #7a8a9a;
+    --color-system-msg: #6a6a2a;
 
     /* Lock */
-    --lock-tag: #8a7a3a;
-    --lock-time: #6a5a2a;
-    --lock-sender: #9a8a4a;
-    --lock-sep: #5a4a2a;
-    --lock-text: #c8b868;
+    --lock-tag: #7a6a2a;
+    --lock-time: #8a8a4a;
+    --lock-sender: #6a5a1a;
+    --lock-sep: #b0b080;
+    --lock-text: #5a5a1a;
 
     /* Scrollbar */
     --scrollbar-thumb: #222;
     --scrollbar-track: #1e1e1e;
 
-    /* Own messages */
-    --msg-own-border: rgba(58, 122, 90, 0.18);
-    --msg-own-bg: rgba(58, 122, 90, 0.05);
-
-    /* System message divider */
-    --system-divider: rgba(138, 122, 58, 0.35);
-
     /* Misc */
-    --offline-dot: #2a2a2a;
-    --offline-dot-large: #333;
-    --contact-badge-off: #282828;
-    --contact-unread: #4a7a6a;
-    --logo-filter: brightness(0) invert(1);
-    --sidebar-logo-filter: brightness(0) invert(0.22);
+    --offline-dot: #999999;
+    --offline-dot-large: #888888;
+    --contact-badge-off: #c8c8c8;
+    --contact-unread: #2a6a4a;
+    --logo-filter: brightness(0) invert(0);
+    --sidebar-logo-filter: brightness(0) invert(0.7);
 }
 
 /* === Watermark === */
@@ -402,17 +395,6 @@ h1 {
     color: var(--text-self-username);
 }
 
-#self-status-text {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    color: var(--accent);
-    padding-left: 16px;
-    display: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 /* === Sidebar Buttons === */
 .sidebar-btn {
     background: none;
@@ -537,7 +519,9 @@ h1 {
 }
 
 .status-dot.offline {
-    background: var(--offline-dot);
+    background: transparent;
+    border: 1.5px solid var(--offline-dot);
+    box-sizing: border-box;
 }
 
 .contact-name {
@@ -569,17 +553,6 @@ h1 {
 
 .contact.channel-entry .contact-badge {
     color: var(--accent-channel-badge);
-}
-
-.contact-status {
-    display: block;
-    font-size: 10px;
-    color: var(--accent-dimmer);
-    letter-spacing: 0.05em;
-    margin-left: 18px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .channel-separator {
@@ -630,7 +603,9 @@ h1 {
 }
 
 .status-dot.offline-dot {
-    background-color: var(--offline-dot-large);
+    background-color: transparent;
+    border: 1.5px solid var(--offline-dot-large);
+    box-sizing: border-box;
     box-shadow: none;
 }
 
@@ -656,7 +631,7 @@ h1 {
     flex-direction: column;
     gap: 4px;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-track) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 #message-feed::-webkit-scrollbar {
@@ -674,15 +649,19 @@ h1 {
     animation: emerge-up 0.2s ease both;
 }
 
+.message.new-sender {
+    margin-top: 8px;
+}
+
 .message .msg-time {
     color: var(--text-dim);
-    font-size: 11px;
-    opacity: 0.6;
 }
 
 .message .msg-sender {
     /* color applied inline per-user via getColorHex() */
     margin-left: 4px;
+    font-weight: bold;
+    letter-spacing: 0.02em;
 }
 
 .msg-admin-tag {
@@ -694,7 +673,8 @@ h1 {
 
 .message .msg-sep {
     color: var(--text-dimmer);
-    margin: 0 5px;
+    margin: 0 4px;
+    opacity: 0.5;
 }
 
 .message .msg-text {
@@ -867,7 +847,7 @@ h1 {
     max-height: 160px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-track) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .cmd-hint {
@@ -899,9 +879,10 @@ h1 {
 #input-area {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     padding: 13px 20px;
     border-top: 1px solid var(--border-secondary);
+    background: var(--bg-input-area);
     flex-shrink: 0;
 }
 
@@ -927,7 +908,7 @@ h1 {
     background: none;
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--color-send-btn);
     cursor: pointer;
     letter-spacing: 0.15em;
@@ -1231,8 +1212,8 @@ h1 {
     --text-primary: #8a8a9a;
     --text-bright: #c0c4d0;
     --text-white: #e8ecf4;
-    --text-msg: #b8bcc8;
-    --text-msg-self: #d0d4e0;
+    --text-msg: #ccd0dc;
+    --text-msg-self: #e0e4f0;
     --text-input: #9a9aaa;
     --text-dim: #3a3a5a;
     --text-dimmer: #2a2a4a;
@@ -1277,11 +1258,13 @@ h1 {
     --lock-sep: #2a3a5a;
     --lock-text: #8aaace;
 
-    --scrollbar-thumb: #1a1a2a;
-    --scrollbar-track: #14142a;
+    --scrollbar-thumb: #2a2a4a;
+    --scrollbar-track: #0c0c1a;
 
-    --offline-dot: #1a1a2a;
-    --offline-dot-large: #2a2a3a;
+    --bg-input-area: #10122a;
+
+    --offline-dot: #3a3a5a;
+    --offline-dot-large: #4a4a6a;
     --contact-badge-off: #1e1e2e;
     --contact-unread: #4a6a8a;
     --msg-own-border: rgba(74, 106, 154, 0.18);
@@ -1300,8 +1283,8 @@ h1 {
     --text-primary: #33aa33;
     --text-bright: #44dd44;
     --text-white: #66ff66;
-    --text-msg: #33cc33;
-    --text-msg-self: #44ee44;
+    --text-msg: #44dd44;
+    --text-msg-self: #55ff55;
     --text-input: #33aa33;
     --text-dim: #1a5a1a;
     --text-dimmer: #145014;
@@ -1346,11 +1329,13 @@ h1 {
     --lock-sep: #145014;
     --lock-text: #55cc55;
 
-    --scrollbar-thumb: #0e2a0e;
-    --scrollbar-track: #0a1a0a;
+    --scrollbar-thumb: #1a4a1a;
+    --scrollbar-track: #040a04;
 
-    --offline-dot: #0a2a0a;
-    --offline-dot-large: #0e3a0e;
+    --bg-input-area: #060c06;
+
+    --offline-dot: #1a5a1a;
+    --offline-dot-large: #2a6a2a;
     --contact-badge-off: #081808;
     --contact-unread: #22aa22;
     --msg-own-border: rgba(34, 170, 34, 0.18);
@@ -1369,8 +1354,8 @@ h1 {
     --text-primary: #aa8833;
     --text-bright: #ddaa33;
     --text-white: #ffcc44;
-    --text-msg: #ccaa44;
-    --text-msg-self: #ddbb44;
+    --text-msg: #ddbb55;
+    --text-msg-self: #eedd66;
     --text-input: #aa8833;
     --text-dim: #5a4a1a;
     --text-dimmer: #504014;
@@ -1415,11 +1400,13 @@ h1 {
     --lock-sep: #504014;
     --lock-text: #ccbb55;
 
-    --scrollbar-thumb: #2a2000;
-    --scrollbar-track: #1a1400;
+    --scrollbar-thumb: #4a3a10;
+    --scrollbar-track: #0a0800;
 
-    --offline-dot: #2a2000;
-    --offline-dot-large: #3a2a0e;
+    --bg-input-area: #100e02;
+
+    --offline-dot: #5a4a1a;
+    --offline-dot-large: #6a5a2a;
     --contact-badge-off: #181000;
     --contact-unread: #aa8822;
     --msg-own-border: rgba(170, 136, 34, 0.18);
@@ -1429,71 +1416,70 @@ h1 {
 }
 
 /* Light — light terminal */
-[data-theme="light"] {
-    --bg-primary: #e8e8e8;
-    --bg-sidebar: #dedede;
-    --bg-hover: #d0d0d0;
-    --bg-hint-hover: #c8c8c8;
+[data-theme="dark"] {
+    --bg-primary: #0f0f0f;
+    --bg-sidebar: #0a0a0a;
+    --bg-hover: #111;
+    --bg-hint-hover: #141414;
 
-    --text-primary: #4a4a4a;
-    --text-bright: #1a1a1a;
-    --text-white: #000000;
-    --text-msg: #2a2a2a;
-    --text-msg-self: #1a1a1a;
-    --text-input: #3a3a3a;
-    --text-dim: #8a8a8a;
-    --text-dimmer: #9a9a9a;
-    --text-muted: #7a7a7a;
-    --text-muted-hover: #4a4a4a;
-    --text-contact-active: #1a1a1a;
-    --text-sidebar-header: #9a9a9a;
-    --text-sidebar-btn: #aaaaaa;
-    --text-sidebar-btn-hover: #4a4a4a;
-    --text-self-username: #7a7a7a;
-    --text-placeholder: #9a9a9a;
-    --text-filter-placeholder: #b0b0b0;
-    --text-watermark: #c8c8c8;
-    --text-help-desc: #7a7a7a;
+    --text-primary: #b0b0b0;
+    --text-bright: #d0d0d0;
+    --text-white: #ffffff;
+    --text-msg: #e8eaee;
+    --text-msg-self: #f2f3f5;
+    --text-input: #b8b8b8;
+    --text-dim: #808080;
+    --text-dimmer: #6a6a6a;
+    --text-muted: #858585;
+    --text-muted-hover: #9a9a9a;
+    --text-contact-active: #c0c0c0;
+    --text-sidebar-header: #787878;
+    --text-sidebar-btn: #747474;
+    --text-sidebar-btn-hover: #c0c0c0;
+    --text-self-username: #888888;
+    --text-placeholder: #787878;
+    --text-filter-placeholder: #686868;
+    --text-watermark: #4a4a4a;
+    --text-help-desc: #8a8a8a;
 
-    --accent: #2a6a4a;
-    --accent-glow: #2a6a4a44;
-    --accent-light: #1a5a3a;
-    --accent-lighter: #0a4a2a;
-    --accent-dim: #5a9a7a;
-    --accent-dimmer: #7aaa8a;
-    --accent-channel: #2a6a4a;
-    --accent-channel-active: #1a5a3a;
-    --accent-channel-badge: #5a9a7a;
-    --accent-cmd: #2a6a4a;
+    --accent: #4a9a6a;
+    --accent-glow: #4a9a6a88;
+    --accent-light: #5aaa8a;
+    --accent-lighter: #7adaaa;
+    --accent-dim: #3a6a50;
+    --accent-dimmer: #2a5040;
+    --accent-channel: #5a9a7a;
+    --accent-channel-active: #7abb9a;
+    --accent-channel-badge: #4a7a5a;
+    --accent-cmd: #8aaa7a;
 
-    --border-primary: #c0c0c0;
-    --border-secondary: #cccccc;
-    --border-input: #b0b0b0;
-    --border-input-focus: #666;
+    --border-primary: #2a2a2a;
+    --border-secondary: #262626;
+    --border-input: #333333;
+    --border-input-focus: #777;
 
-    --color-error: #aa3a3a;
-    --color-error-hover: #cc4a4a;
-    --color-admin-tag: #8a5a5a;
-    --color-login-btn: #4a5a6a;
-    --color-send-btn: #7a8a9a;
-    --color-system-msg: #6a6a2a;
+    --color-error: #9a4a4a;
+    --color-error-hover: #bb5a5a;
+    --color-admin-tag: #aa7a7a;
+    --color-login-btn: #9aacbc;
+    --color-send-btn: #5a8090;
+    --color-system-msg: #9a8a4a;
 
-    --lock-tag: #7a6a2a;
-    --lock-time: #8a8a4a;
-    --lock-sender: #6a5a1a;
-    --lock-sep: #b0b080;
-    --lock-text: #5a5a1a;
+    --lock-tag: #8a7a3a;
+    --lock-time: #6a5a2a;
+    --lock-sender: #9a8a4a;
+    --lock-sep: #5a4a2a;
+    --lock-text: #c8b868;
 
-    --scrollbar-thumb: #b0b0b0;
-    --scrollbar-track: #c0c0c0;
+    --scrollbar-thumb: #3a3a3a;
+    --scrollbar-track: #141414;
+
+    --bg-input-area: #161616;
 
     --offline-dot: #c0c0c0;
     --offline-dot-large: #aaaaaa;
     --contact-badge-off: #c8c8c8;
     --contact-unread: #2a6a4a;
     --logo-filter: brightness(0) invert(0);
-    --msg-own-border: rgba(42, 106, 74, 0.2);
-    --msg-own-bg: rgba(42, 106, 74, 0.06);
-    --system-divider: rgba(106, 106, 42, 0.3);
     --sidebar-logo-filter: brightness(0) invert(0.7);
 }

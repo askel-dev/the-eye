@@ -27,15 +27,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Curated identity color palette — terminal-safe, readable on dark backgrounds
 const IDENTITY_COLORS = [
-    { id: 1, name: 'Sage',           hex: '#8A9A7A' },
-    { id: 2, name: 'Warm Amber',     hex: '#C49A6A' },
-    { id: 3, name: 'Seafoam',        hex: '#6AADA0' },
+    { id: 1, name: 'Sage',           hex: '#5A7A4A' },
+    { id: 2, name: 'Warm Amber',     hex: '#9A7040' },
+    { id: 3, name: 'Seafoam',        hex: '#3A8A7A' },
     { id: 4, name: 'Phosphor Green', hex: '#39FF14' },
-    { id: 5, name: 'Mauve',          hex: '#A8687A' },
-    { id: 6, name: 'Dusty Rose',     hex: '#C97B8A' },
-    { id: 7, name: 'Steel',          hex: '#7A94B0' },
-    { id: 8, name: 'Sand',           hex: '#C8BCA8' },
-    { id: 9, name: 'Terracotta',     hex: '#B8806E' },
+    { id: 5, name: 'Mauve',          hex: '#8A4A60' },
+    { id: 6, name: 'Dusty Rose',     hex: '#A05568' },
+    { id: 7, name: 'Steel',          hex: '#5A7498' },
+    { id: 8, name: 'Sand',           hex: '#9A8A6A' },
+    { id: 9, name: 'Terracotta',     hex: '#946048' },
 ];
 
 function getColorHex(colorId) {
@@ -45,11 +45,11 @@ function getColorHex(colorId) {
 
 // UI color themes
 const THEMES = [
-    { id: 'default',  name: 'Default',  desc: 'Standard dark terminal' },
+    { id: 'default',  name: 'Default',  desc: 'Light terminal' },
+    { id: 'dark',     name: 'Dark',     desc: 'Standard dark terminal' },
     { id: 'midnight', name: 'Midnight', desc: 'Blue-tinted dark' },
     { id: 'phosphor', name: 'Phosphor', desc: 'Classic green CRT' },
     { id: 'amber',    name: 'Amber',    desc: 'Warm amber CRT' },
-    { id: 'light',    name: 'Light',    desc: 'Light terminal' },
 ];
 
 function applyTheme(themeId) {
@@ -251,7 +251,6 @@ const COMMANDS = {
     lock:   { usage: '/lock [n]',       description: 'Lock/unlock message (survives /clear)', handler: cmdLock },
     who:    { usage: '/who',            description: 'Show online users',             handler: cmdWho },
     top:    { usage: '/top',            description: 'Show message leaderboard',      handler: cmdTop },
-    status: { usage: '/status <text>',  description: 'Set your status text',          handler: cmdStatus },
     color:  { usage: '/color list',     description: 'List or set your identity color', handler: cmdColor },
     theme:  { usage: '/theme list',     description: 'List or set UI color theme',     handler: cmdTheme },
     mute:   { usage: '/mute',           description: 'Toggle all sound effects',      handler: cmdMute },
@@ -429,31 +428,6 @@ function cmdWho() {
         const names = online.map(u => u.username).sort().join(', ');
         appendSystemMsg('ONLINE (' + online.length + '): ' + names);
     }
-}
-
-async function cmdStatus(args) {
-    if (!args) {
-        appendSystemMsg('USAGE: /status <text>  — set status');
-        appendSystemMsg('       /status remove  — clear status');
-        return;
-    }
-    const isRemove = args.trim().toLowerCase() === 'remove';
-    const text = isRemove ? null : args.slice(0, 100);
-    const { error } = await sb.from('profiles').update({ status_text: text }).eq('id', currentUser.id);
-    if (error) {
-        appendSystemMsg('ERROR SETTING STATUS');
-        console.error('cmdStatus error:', error);
-    } else {
-        updateSelfStatus(text);
-        appendSystemMsg(isRemove ? 'STATUS CLEARED' : 'STATUS SET: ' + text);
-    }
-}
-
-function updateSelfStatus(statusText) {
-    const el = document.getElementById('self-status-text');
-    if (!el) return;
-    el.textContent = statusText || '';
-    el.style.display = statusText ? 'block' : 'none';
 }
 
 async function cmdTop() {
@@ -700,8 +674,7 @@ function renderContacts() {
         el.innerHTML =
             `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
             `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
-            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>` +
-            (user.status_text ? `<span class="contact-status">${escapeHtml(user.status_text)}</span>` : '');
+            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>`;
         list.appendChild(el);
     }
 }
@@ -711,6 +684,10 @@ function appendMessage(msg, animate = true) {
     const el = document.createElement('div');
     const isSelf = msg.sender_id === currentUser.id;
     el.className = 'message' + (isSelf ? ' self' : '');
+    const lastMsg = feed.lastElementChild;
+    if (lastMsg && lastMsg.dataset.senderId !== String(msg.sender_id)) {
+        el.classList.add('new-sender');
+    }
     if (!animate) el.style.animation = 'none';
 
     const senderName = isSelf ? currentUser.username : (msg.sender ? msg.sender.username : '???');
@@ -933,8 +910,6 @@ async function enterChat(userId, username) {
     const selfUsernameEl = document.getElementById('self-username');
     selfUsernameEl.textContent = username;
     selfUsernameEl.style.color = getColorHex(currentUser.color_id);
-    updateSelfStatus(myProfile ? myProfile.status_text : null);
-
     renderContacts();
     subscribeToMessages();
     subscribeToProfiles();
