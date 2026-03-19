@@ -71,6 +71,13 @@
     --contact-unread: #2a6a4a;
     --logo-filter: brightness(0) invert(0);
     --sidebar-logo-filter: brightness(0) invert(0.7);
+
+    /* Own messages */
+    --msg-own-border: rgba(42, 106, 74, 0.2);
+    --msg-own-bg: rgba(42, 106, 74, 0.06);
+
+    /* System message divider */
+    --system-divider: rgba(106, 106, 42, 0.3);
 }
 
 /* === Watermark === */
@@ -647,6 +654,8 @@ h1 {
     font-size: 13px;
     line-height: 1.6;
     animation: emerge-up 0.2s ease both;
+    padding-left: 9px;
+    border-left: 2px solid transparent;
 }
 
 .message.new-sender {
@@ -686,9 +695,8 @@ h1 {
 }
 
 .message.self {
-    border-left: 2px solid var(--msg-own-border);
+    border-left-color: var(--msg-own-border);
     background: var(--msg-own-bg);
-    padding-left: 7px;
 }
 
 /* === Locked Messages === */
@@ -1482,4 +1490,7 @@ h1 {
     --contact-unread: #2a6a4a;
     --logo-filter: brightness(0) invert(0);
     --sidebar-logo-filter: brightness(0) invert(0.7);
+    --msg-own-border: rgba(74, 154, 106, 0.18);
+    --msg-own-bg: rgba(74, 154, 106, 0.05);
+    --system-divider: rgba(154, 138, 74, 0.35);
 }
