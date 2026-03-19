@@ -450,13 +450,20 @@ h1 {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 7px 14px;
-    border-bottom: 1px solid var(--border-secondary);
+    padding: 5px 10px;
+    margin: 7px 10px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-secondary);
+    border-radius: 5px;
     flex-shrink: 0;
     position: sticky;
     top: 0;
-    background: var(--bg-sidebar);
     z-index: 2;
+    transition: border-color 0.15s;
+}
+
+.contact-filter-wrap:focus-within {
+    border-color: var(--accent);
 }
 
 .contact-filter-prefix {
@@ -538,15 +545,55 @@ h1 {
     white-space: nowrap;
 }
 
-.contact-badge {
+/* Contact section headers (Online/Offline groups) */
+.contact-section-header {
     font-size: 10px;
-    color: var(--accent-dim);
-    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 14px 4px;
+    margin-top: 6px;
+    user-select: none;
+    border-top: 1px solid var(--border-primary);
+}
+
+.contact-section-header:first-of-type {
+    border-top: none;
+    margin-top: 2px;
+}
+
+/* Online contacts: full opacity name */
+.contact.contact-online .contact-name {
+    opacity: 1;
+}
+
+/* Offline contacts: muted name */
+.contact.contact-offline .contact-name {
+    opacity: 0.5;
+}
+
+/* Favorite star toggle */
+.contact-fav {
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
     flex-shrink: 0;
 }
 
-.contact-badge.off {
-    color: var(--contact-badge-off);
+.contact:hover .contact-fav {
+    opacity: 0.6;
+}
+
+.contact:hover .contact-fav:hover {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.contact-fav.is-fav {
+    opacity: 1;
+    color: var(--accent);
 }
 
 /* Channel entry in sidebar */

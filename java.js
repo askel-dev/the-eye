@@ -93,6 +93,20 @@ let newMsgCount         = 0;        // unread count while scrolled up
 let lockedMessages      = new Set(JSON.parse(localStorage.getItem('locked_msgs') || '[]'));
 function persistLockedMessages() { localStorage.setItem('locked_msgs', JSON.stringify(Array.from(lockedMessages))); }
 let lockChannel         = null;     // realtime channel for lock sync (postgres UPDATE)
+let lastMessageTime     = new Map(); // userId → timestamp (ms) for sorting contacts
+let unreadCounts        = new Map(); // userId → unread message count
+let favoriteIds         = new Set(JSON.parse(localStorage.getItem('eye_favorites') || '[]'));
+function persistFavorites() { localStorage.setItem('eye_favorites', JSON.stringify(Array.from(favoriteIds))); }
+
+function toggleFavorite(userId) {
+    if (favoriteIds.has(userId)) {
+        favoriteIds.delete(userId);
+    } else {
+        favoriteIds.add(userId);
+    }
+    persistFavorites();
+    renderContacts();
+}
 let typingChannel       = null;     // broadcast channel for typing indicators
 let typingTimeout       = null;     // timeout to hide remote typing
 let lastTypingSent      = 0;        // throttle outgoing typing events
@@ -635,6 +649,44 @@ function confirmCmdHint() {
 // =============================================
 // 4. UI / RENDER
 // =============================================
+async function fetchLastMessageTimes() {
+    const { data: sent } = await sb
+        .from('messages')
+        .select('recipient_id, created_at')
+        .eq('sender_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    const { data: received } = await sb
+        .from('messages')
+        .select('sender_id, created_at')
+        .eq('recipient_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    const map = new Map();
+    for (const m of (sent || [])) {
+        const t = new Date(m.created_at).getTime();
+        if (!map.has(m.recipient_id) || t > map.get(m.recipient_id)) {
+            map.set(m.recipient_id, t);
+        }
+    }
+    for (const m of (received || [])) {
+        const t = new Date(m.created_at).getTime();
+        if (!map.has(m.sender_id) || t > map.get(m.sender_id)) {
+            map.set(m.sender_id, t);
+        }
+    }
+    lastMessageTime = map;
+}
+
+function sortByLastMessage(users) {
+    return users.slice().sort((a, b) => {
+        const tA = lastMessageTime.get(a.id) || 0;
+        const tB = lastMessageTime.get(b.id) || 0;
+        if (tA !== tB) return tB - tA;
+        return a.username.localeCompare(b.username);
+    });
+}
+
 function renderContacts() {
     const list = document.querySelector('.contact-list');
     list.innerHTML = '';
@@ -665,18 +717,79 @@ function renderContacts() {
         return;
     }
 
-    for (const user of others) {
-        const isOnline = onlineIds.has(user.id);
+    const favoriteUsers = sortByLastMessage(others.filter(u => favoriteIds.has(u.id)));
+    const onlineUsers = sortByLastMessage(others.filter(u => onlineIds.has(u.id) && !favoriteIds.has(u.id)));
+    const offlineUsers = sortByLastMessage(others.filter(u => !onlineIds.has(u.id) && !favoriteIds.has(u.id)));
+
+    function unreadBadge(userId) {
+        const count = unreadCounts.get(userId);
+        return count ? `<span class="contact-unread" data-count="${count}">[${count}]</span>` : '';
+    }
+
+    // Favorites section (only if any)
+    if (favoriteUsers.length > 0) {
+        const favHeader = document.createElement('div');
+        favHeader.className = 'contact-section-header';
+        favHeader.textContent = `Favorites \u2014 ${favoriteUsers.length}`;
+        list.appendChild(favHeader);
+
+        for (const user of favoriteUsers) {
+            const isOnline = onlineIds.has(user.id);
+            const el = document.createElement('div');
+            const userColor = getColorHex(user.color_id);
+            el.className = 'contact ' + (isOnline ? 'contact-online' : 'contact-offline') +
+                (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
+            el.dataset.userId = user.id;
+            el.innerHTML =
+                `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
+                `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
+                unreadBadge(user.id) +
+                `<span class="contact-fav is-fav" data-fav-id="${user.id}" title="Remove from favorites">\u2605</span>`;
+            list.appendChild(el);
+        }
+    }
+
+    // Online section header
+    const onlineHeader = document.createElement('div');
+    onlineHeader.className = 'contact-section-header';
+    onlineHeader.textContent = `Online \u2014 ${onlineUsers.length}`;
+    list.appendChild(onlineHeader);
+
+    for (const user of onlineUsers) {
         const el = document.createElement('div');
         const userColor = getColorHex(user.color_id);
-        el.className = 'contact' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
+        el.className = 'contact contact-online' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
-            `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
+            `<span class="status-dot online"></span>` +
             `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
-            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>`;
+            unreadBadge(user.id) +
+            `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
         list.appendChild(el);
     }
+
+    // Offline section header
+    const offlineHeader = document.createElement('div');
+    offlineHeader.className = 'contact-section-header';
+    offlineHeader.textContent = `Offline \u2014 ${offlineUsers.length}`;
+    list.appendChild(offlineHeader);
+
+    for (const user of offlineUsers) {
+        const el = document.createElement('div');
+        const userColor = getColorHex(user.color_id);
+        el.className = 'contact contact-offline' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
+        el.dataset.userId = user.id;
+        el.innerHTML =
+            `<span class="status-dot offline"></span>` +
+            `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
+            unreadBadge(user.id) +
+            `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
+        list.appendChild(el);
+    }
+
+    // Re-apply filter if active
+    const filterVal = document.getElementById('contact-filter')?.value;
+    if (filterVal) applyContactFilter(filterVal);
 }
 
 function appendMessage(msg, animate = true) {
@@ -803,12 +916,7 @@ function renderMessages(messages) {
 }
 
 function updateContactStatus(userId, isOnline) {
-    const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
-    if (!el) return;
-    const dot = el.querySelector('.status-dot');
-    const badge = el.querySelector('.contact-badge');
-    dot.className = 'status-dot ' + (isOnline ? 'online' : 'offline');
-    badge.textContent = isOnline ? '[ON]' : '[OFF]';
+    renderContacts();
 
     if (activeContact && activeContact.id === userId) {
         updateHeader(activeContact, isOnline);
@@ -910,6 +1018,7 @@ async function enterChat(userId, username) {
     const selfUsernameEl = document.getElementById('self-username');
     selfUsernameEl.textContent = username;
     selfUsernameEl.style.color = getColorHex(currentUser.color_id);
+    await fetchLastMessageTimes();
     renderContacts();
     subscribeToMessages();
     subscribeToProfiles();
@@ -1090,6 +1199,9 @@ async function sendMessage() {
         if (error) {
             console.error('sendMessage error:', error);
             input.value = body;
+        } else {
+            lastMessageTime.set(activeContact.id, Date.now());
+            renderContacts();
         }
     }
 }
@@ -1130,7 +1242,11 @@ async function handleIncomingMessage(payload) {
     const cached = conversationCache.get(dmCacheKey);
     if (cached) cached.push(msg);
 
+    // Update last message time
+    lastMessageTime.set(dmCacheKey, new Date(msg.created_at).getTime());
+
     if (isActiveConversation) {
+        renderContacts();
         hideTypingIndicator();
         appendMessage(msg);
     } else {
@@ -1139,20 +1255,10 @@ async function handleIncomingMessage(payload) {
             playNotif();
         }
 
-        // Unread badge on sidebar contact
+        // Track unread count in state and re-render
         const contactId = msg.sender_id === currentUser.id ? msg.recipient_id : msg.sender_id;
-        const el = document.querySelector(`.contact[data-user-id="${contactId}"]`);
-        if (el) {
-            let badge = el.querySelector('.contact-unread');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'contact-unread';
-                el.appendChild(badge);
-            }
-            const count = (parseInt(badge.dataset.count || '0')) + 1;
-            badge.dataset.count = count;
-            badge.textContent = `[${count}]`;
-        }
+        unreadCounts.set(contactId, (unreadCounts.get(contactId) || 0) + 1);
+        renderContacts();
         updateTitle();
     }
 }
@@ -1302,6 +1408,7 @@ async function switchContact(userId) {
     hideTypingIndicator();
 
     // Clear unread badge
+    unreadCounts.delete(userId);
     const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
     if (el) {
         const badge = el.querySelector('.contact-unread');
@@ -1492,6 +1599,14 @@ document.getElementById('cmd-hints').addEventListener('click', e => {
 
 // Contact clicks (event delegation — contacts are dynamic)
 document.querySelector('.contact-list').addEventListener('click', e => {
+    // Favorite star toggle
+    const favEl = e.target.closest('.contact-fav');
+    if (favEl && favEl.dataset.favId) {
+        e.stopPropagation();
+        toggleFavorite(favEl.dataset.favId);
+        return;
+    }
+
     const el = e.target.closest('.contact');
     if (!el) return;
     if (el.dataset.channel) {
@@ -1520,6 +1635,21 @@ function applyContactFilter(query) {
     // Show/hide the separator that sits right after the channel entry
     const sep = document.querySelector('.contact-list .channel-separator');
     if (sep) sep.style.display = channelVisible ? '' : 'none';
+
+    // Show/hide section headers based on whether any contacts in their group are visible
+    document.querySelectorAll('.contact-list .contact-section-header').forEach(header => {
+        if (!q) { header.style.display = ''; return; }
+        let hasVisible = false;
+        let sibling = header.nextElementSibling;
+        while (sibling && !sibling.classList.contains('contact-section-header')) {
+            if (sibling.classList.contains('contact') && sibling.style.display !== 'none') {
+                hasVisible = true;
+                break;
+            }
+            sibling = sibling.nextElementSibling;
+        }
+        header.style.display = hasVisible ? '' : 'none';
+    });
 }
 
 const contactFilterInput = document.getElementById('contact-filter');
