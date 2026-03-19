@@ -73,9 +73,7 @@ applyTheme(getStoredTheme());
 let currentUser     = null;      // { id, username }
 let activeContact   = null;      // { id, username }
 let allUsers        = [];        // [{ id, username }, ...]
-let onlineIds       = new Set(); // user IDs currently online
 let realtimeChannel = null;
-let presenceChannel = null;
 let profilesChannel = null;
 let renderedMsgIds  = new Set(); // dedup for self-echo
 let conversationCache = new Map(); // userId|channelName → messages[]
@@ -249,7 +247,6 @@ const COMMANDS = {
     help:   { usage: '/help',           description: 'Show available commands',       handler: cmdHelp },
     clear:  { usage: '/clear',          description: 'Clear the message feed',        handler: cmdClear },
     lock:   { usage: '/lock [n]',       description: 'Lock/unlock message (survives /clear)', handler: cmdLock },
-    who:    { usage: '/who',            description: 'Show online users',             handler: cmdWho },
     top:    { usage: '/top',            description: 'Show message leaderboard',      handler: cmdTop },
     status: { usage: '/status <text>',  description: 'Set your status text',          handler: cmdStatus },
     color:  { usage: '/color list',     description: 'List or set your identity color', handler: cmdColor },
@@ -419,16 +416,6 @@ function cmdClear() {
     appendSystemMsg(locked.length > 0
         ? `FEED CLEARED — ${locked.length} LOCKED MESSAGE${locked.length > 1 ? 'S' : ''} PRESERVED`
         : 'FEED CLEARED');
-}
-
-function cmdWho() {
-    const online = allUsers.filter(u => onlineIds.has(u.id));
-    if (online.length === 0) {
-        appendSystemMsg('NO USERS ONLINE');
-    } else {
-        const names = online.map(u => u.username).sort().join(', ');
-        appendSystemMsg('ONLINE (' + online.length + '): ' + names);
-    }
 }
 
 async function cmdStatus(args) {
@@ -692,15 +679,12 @@ function renderContacts() {
     }
 
     for (const user of others) {
-        const isOnline = onlineIds.has(user.id);
         const el = document.createElement('div');
         const userColor = getColorHex(user.color_id);
         el.className = 'contact' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
-            `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
             `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
-            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>` +
             (user.status_text ? `<span class="contact-status">${escapeHtml(user.status_text)}</span>` : '');
         list.appendChild(el);
     }
@@ -825,28 +809,10 @@ function renderMessages(messages) {
     scrollToBottom(true);
 }
 
-function updateContactStatus(userId, isOnline) {
-    const el = document.querySelector(`.contact[data-user-id="${userId}"]`);
-    if (!el) return;
-    const dot = el.querySelector('.status-dot');
-    const badge = el.querySelector('.contact-badge');
-    dot.className = 'status-dot ' + (isOnline ? 'online' : 'offline');
-    badge.textContent = isOnline ? '[ON]' : '[OFF]';
-
-    if (activeContact && activeContact.id === userId) {
-        updateHeader(activeContact, isOnline);
-    }
-}
-
-function updateHeader(contact, isOnline) {
+function updateHeader(contact) {
     const contactColor = getColorHex(contact.color_id);
     const headerLabel = document.getElementById('chat-with-label');
     headerLabel.innerHTML = `// <span style="color:${contactColor}">${escapeHtml(contact.username)}</span>`;
-    const statusLabel = document.getElementById('chat-status-label');
-    statusLabel.textContent = isOnline ? '[ONLINE]' : '[OFFLINE]';
-    statusLabel.className = isOnline ? 'online-label' : 'offline-label';
-    const dot = document.getElementById('chat-status-dot');
-    dot.className = isOnline ? 'status-dot online-dot' : 'status-dot offline-dot';
 }
 
 function setLoginError(msg) {
@@ -941,7 +907,6 @@ async function enterChat(userId, username) {
     subscribeToChannelMessages();
     subscribeToTyping();
     subscribeToLocks();
-    joinPresence();
 
     // Auto-select first contact
     const first = allUsers.find(u => u.id !== currentUser.id);
@@ -953,14 +918,12 @@ async function enterChat(userId, username) {
 }
 
 async function handleLogout() {
-    await leavePresence();
     unsubscribeAll();
     await sb.auth.signOut();
 
     currentUser = null;
     activeContact = null;
     allUsers = [];
-    onlineIds.clear();
     renderedMsgIds.clear();
     lockedMessages.clear();
     viewMode = 'dm';
@@ -1269,47 +1232,10 @@ function handleIncomingChannelMessage(payload) {
 
 function unsubscribeAll() {
     if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
-    if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
     if (profilesChannel) { sb.removeChannel(profilesChannel); profilesChannel = null; }
     if (channelRealtimeChannel) { sb.removeChannel(channelRealtimeChannel); channelRealtimeChannel = null; }
     if (typingChannel) { sb.removeChannel(typingChannel); typingChannel = null; }
     if (lockChannel) { sb.removeChannel(lockChannel); lockChannel = null; }
-}
-
-// =============================================
-// 8. PRESENCE
-// =============================================
-function joinPresence() {
-    presenceChannel = sb.channel('online-users', {
-        config: { presence: { key: currentUser.id } }
-    });
-
-    presenceChannel
-        .on('presence', { event: 'sync' }, () => {
-            onlineIds = new Set(Object.keys(presenceChannel.presenceState()));
-            renderContacts();
-        })
-        .on('presence', { event: 'join' }, ({ key }) => {
-            onlineIds.add(key);
-            updateContactStatus(key, true);
-        })
-        .on('presence', { event: 'leave' }, ({ key }) => {
-            onlineIds.delete(key);
-            updateContactStatus(key, false);
-        })
-        .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                await presenceChannel.track({ online_at: new Date().toISOString() });
-            }
-        });
-}
-
-async function leavePresence() {
-    if (presenceChannel) {
-        await presenceChannel.untrack();
-        sb.removeChannel(presenceChannel);
-        presenceChannel = null;
-    }
 }
 
 // =============================================
@@ -1339,7 +1265,7 @@ async function switchContact(userId) {
         c.classList.toggle('active', c.dataset.userId === userId);
     });
 
-    updateHeader(contact, onlineIds.has(userId));
+    updateHeader(contact);
     closeSidebar();
     await loadMessages(userId);
 }
@@ -1367,11 +1293,6 @@ async function switchToChannel(channelName) {
 
     // Update header
     document.getElementById('chat-with-label').textContent = `// #${channelName}`;
-    const statusLabel = document.getElementById('chat-status-label');
-    statusLabel.textContent = '[PUBLIC]';
-    statusLabel.className = 'online-label';
-    const dot = document.getElementById('chat-status-dot');
-    dot.className = 'status-dot online-dot';
 
     closeSidebar();
     await loadChannelMessages(channelName);
