@@ -696,7 +696,6 @@ h1 {
 
 .message.self {
     border-left-color: var(--msg-own-border);
-    background: var(--msg-own-bg);
 }
 
 /* === Locked Messages === */
