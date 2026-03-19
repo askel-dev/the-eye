@@ -27,15 +27,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Curated identity color palette — terminal-safe, readable on dark backgrounds
 const IDENTITY_COLORS = [
-    { id: 1, name: 'Sage',           hex: '#8A9A7A' },
-    { id: 2, name: 'Warm Amber',     hex: '#C49A6A' },
-    { id: 3, name: 'Seafoam',        hex: '#6AADA0' },
+    { id: 1, name: 'Sage',           hex: '#5A7A4A' },
+    { id: 2, name: 'Warm Amber',     hex: '#9A7040' },
+    { id: 3, name: 'Seafoam',        hex: '#3A8A7A' },
     { id: 4, name: 'Phosphor Green', hex: '#39FF14' },
-    { id: 5, name: 'Mauve',          hex: '#A8687A' },
-    { id: 6, name: 'Dusty Rose',     hex: '#C97B8A' },
-    { id: 7, name: 'Steel',          hex: '#7A94B0' },
-    { id: 8, name: 'Sand',           hex: '#C8BCA8' },
-    { id: 9, name: 'Terracotta',     hex: '#B8806E' },
+    { id: 5, name: 'Mauve',          hex: '#8A4A60' },
+    { id: 6, name: 'Dusty Rose',     hex: '#A05568' },
+    { id: 7, name: 'Steel',          hex: '#5A7498' },
+    { id: 8, name: 'Sand',           hex: '#9A8A6A' },
+    { id: 9, name: 'Terracotta',     hex: '#946048' },
 ];
 
 function getColorHex(colorId) {
@@ -684,6 +684,10 @@ function appendMessage(msg, animate = true) {
     const el = document.createElement('div');
     const isSelf = msg.sender_id === currentUser.id;
     el.className = 'message' + (isSelf ? ' self' : '');
+    const lastMsg = feed.lastElementChild;
+    if (lastMsg && lastMsg.dataset.senderId !== String(msg.sender_id)) {
+        el.classList.add('new-sender');
+    }
     if (!animate) el.style.animation = 'none';
 
     const senderName = isSelf ? currentUser.username : (msg.sender ? msg.sender.username : '???');

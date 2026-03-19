@@ -10,8 +10,8 @@
     --text-primary: #4a4a4a;
     --text-bright: #1a1a1a;
     --text-white: #000000;
-    --text-msg: #2a2a2a;
-    --text-msg-self: #1a1a1a;
+    --text-msg: #1a1a1a;
+    --text-msg-self: #0a0a0a;
     --text-input: #3a3a3a;
     --text-dim: #8a8a8a;
     --text-dimmer: #9a9a9a;
@@ -61,12 +61,15 @@
     --lock-text: #5a5a1a;
 
     /* Scrollbar */
-    --scrollbar-thumb: #b0b0b0;
-    --scrollbar-track: #c0c0c0;
+    --scrollbar-thumb: #888888;
+    --scrollbar-track: #d8d8d8;
+
+    /* Input area */
+    --bg-input-area: #dedede;
 
     /* Misc */
-    --offline-dot: #c0c0c0;
-    --offline-dot-large: #aaaaaa;
+    --offline-dot: #999999;
+    --offline-dot-large: #888888;
     --contact-badge-off: #c8c8c8;
     --contact-unread: #2a6a4a;
     --logo-filter: brightness(0) invert(0);
@@ -519,7 +522,9 @@ h1 {
 }
 
 .status-dot.offline {
-    background: var(--offline-dot);
+    background: transparent;
+    border: 1.5px solid var(--offline-dot);
+    box-sizing: border-box;
 }
 
 .contact-name {
@@ -601,7 +606,9 @@ h1 {
 }
 
 .status-dot.offline-dot {
-    background-color: var(--offline-dot-large);
+    background-color: transparent;
+    border: 1.5px solid var(--offline-dot-large);
+    box-sizing: border-box;
     box-shadow: none;
 }
 
@@ -627,7 +634,7 @@ h1 {
     flex-direction: column;
     gap: 4px;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-track) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 #message-feed::-webkit-scrollbar {
@@ -645,13 +652,21 @@ h1 {
     animation: emerge-up 0.2s ease both;
 }
 
+.message.new-sender {
+    margin-top: 8px;
+}
+
 .message .msg-time {
     color: var(--text-dim);
+    font-size: 11px;
+    opacity: 0.7;
 }
 
 .message .msg-sender {
     /* color applied inline per-user via getColorHex() */
     margin-left: 4px;
+    font-weight: bold;
+    letter-spacing: 0.02em;
 }
 
 .msg-admin-tag {
@@ -663,7 +678,8 @@ h1 {
 
 .message .msg-sep {
     color: var(--text-dimmer);
-    margin: 0 5px;
+    margin: 0 4px;
+    opacity: 0.5;
 }
 
 .message .msg-text {
@@ -815,7 +831,7 @@ h1 {
     max-height: 160px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-track) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .cmd-hint {
@@ -847,9 +863,10 @@ h1 {
 #input-area {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     padding: 13px 20px;
     border-top: 1px solid var(--border-secondary);
+    background: var(--bg-input-area);
     flex-shrink: 0;
 }
 
@@ -875,7 +892,7 @@ h1 {
     background: none;
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--color-send-btn);
     cursor: pointer;
     letter-spacing: 0.15em;
@@ -1179,8 +1196,8 @@ h1 {
     --text-primary: #8a8a9a;
     --text-bright: #c0c4d0;
     --text-white: #e8ecf4;
-    --text-msg: #b8bcc8;
-    --text-msg-self: #d0d4e0;
+    --text-msg: #ccd0dc;
+    --text-msg-self: #e0e4f0;
     --text-input: #9a9aaa;
     --text-dim: #3a3a5a;
     --text-dimmer: #2a2a4a;
@@ -1225,11 +1242,13 @@ h1 {
     --lock-sep: #2a3a5a;
     --lock-text: #8aaace;
 
-    --scrollbar-thumb: #1a1a2a;
-    --scrollbar-track: #14142a;
+    --scrollbar-thumb: #2a2a4a;
+    --scrollbar-track: #0c0c1a;
 
-    --offline-dot: #1a1a2a;
-    --offline-dot-large: #2a2a3a;
+    --bg-input-area: #10122a;
+
+    --offline-dot: #3a3a5a;
+    --offline-dot-large: #4a4a6a;
     --contact-badge-off: #1e1e2e;
     --contact-unread: #4a6a8a;
     --sidebar-logo-filter: brightness(0) invert(0.18);
@@ -1245,8 +1264,8 @@ h1 {
     --text-primary: #33aa33;
     --text-bright: #44dd44;
     --text-white: #66ff66;
-    --text-msg: #33cc33;
-    --text-msg-self: #44ee44;
+    --text-msg: #44dd44;
+    --text-msg-self: #55ff55;
     --text-input: #33aa33;
     --text-dim: #1a5a1a;
     --text-dimmer: #145014;
@@ -1291,11 +1310,13 @@ h1 {
     --lock-sep: #145014;
     --lock-text: #55cc55;
 
-    --scrollbar-thumb: #0e2a0e;
-    --scrollbar-track: #0a1a0a;
+    --scrollbar-thumb: #1a4a1a;
+    --scrollbar-track: #040a04;
 
-    --offline-dot: #0a2a0a;
-    --offline-dot-large: #0e3a0e;
+    --bg-input-area: #060c06;
+
+    --offline-dot: #1a5a1a;
+    --offline-dot-large: #2a6a2a;
     --contact-badge-off: #081808;
     --contact-unread: #22aa22;
     --sidebar-logo-filter: brightness(0) invert(0.15);
@@ -1311,8 +1332,8 @@ h1 {
     --text-primary: #aa8833;
     --text-bright: #ddaa33;
     --text-white: #ffcc44;
-    --text-msg: #ccaa44;
-    --text-msg-self: #ddbb44;
+    --text-msg: #ddbb55;
+    --text-msg-self: #eedd66;
     --text-input: #aa8833;
     --text-dim: #5a4a1a;
     --text-dimmer: #504014;
@@ -1357,11 +1378,13 @@ h1 {
     --lock-sep: #504014;
     --lock-text: #ccbb55;
 
-    --scrollbar-thumb: #2a2000;
-    --scrollbar-track: #1a1400;
+    --scrollbar-thumb: #4a3a10;
+    --scrollbar-track: #0a0800;
 
-    --offline-dot: #2a2000;
-    --offline-dot-large: #3a2a0e;
+    --bg-input-area: #100e02;
+
+    --offline-dot: #5a4a1a;
+    --offline-dot-large: #6a5a2a;
     --contact-badge-off: #181000;
     --contact-unread: #aa8822;
     --sidebar-logo-filter: brightness(0) invert(0.15);
@@ -1377,8 +1400,8 @@ h1 {
     --text-primary: #b0b0b0;
     --text-bright: #d0d0d0;
     --text-white: #ffffff;
-    --text-msg: #d1d5db;
-    --text-msg-self: #e5e7eb;
+    --text-msg: #e8eaee;
+    --text-msg-self: #f2f3f5;
     --text-input: #b8b8b8;
     --text-dim: #808080;
     --text-dimmer: #6a6a6a;
@@ -1423,11 +1446,13 @@ h1 {
     --lock-sep: #5a4a2a;
     --lock-text: #c8b868;
 
-    --scrollbar-thumb: #222;
-    --scrollbar-track: #1e1e1e;
+    --scrollbar-thumb: #3a3a3a;
+    --scrollbar-track: #141414;
 
-    --offline-dot: #505050;
-    --offline-dot-large: #5e5e5e;
+    --bg-input-area: #161616;
+
+    --offline-dot: #606060;
+    --offline-dot-large: #6a6a6a;
     --contact-badge-off: #5e5e5e;
     --contact-unread: #5a9a7a;
     --logo-filter: brightness(0) invert(1);
