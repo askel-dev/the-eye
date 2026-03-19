@@ -62,7 +62,7 @@ function applyTheme(themeId) {
 }
 
 function getStoredTheme() {
-    return localStorage.getItem('eye_theme') || 'default';
+    return localStorage.getItem('eye_theme') || 'light';
 }
 
 applyTheme(getStoredTheme());
@@ -906,8 +906,6 @@ async function enterChat(userId, username) {
     const selfUsernameEl = document.getElementById('self-username');
     selfUsernameEl.textContent = username;
     selfUsernameEl.style.color = getColorHex(currentUser.color_id);
-    updateSelfStatus(myProfile ? myProfile.status_text : null);
-
     renderContacts();
     subscribeToMessages();
     subscribeToProfiles();
