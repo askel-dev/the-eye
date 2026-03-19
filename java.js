@@ -45,11 +45,11 @@ function getColorHex(colorId) {
 
 // UI color themes
 const THEMES = [
-    { id: 'default',  name: 'Default',  desc: 'Standard dark terminal' },
+    { id: 'default',  name: 'Default',  desc: 'Light terminal' },
+    { id: 'dark',     name: 'Dark',     desc: 'Standard dark terminal' },
     { id: 'midnight', name: 'Midnight', desc: 'Blue-tinted dark' },
     { id: 'phosphor', name: 'Phosphor', desc: 'Classic green CRT' },
     { id: 'amber',    name: 'Amber',    desc: 'Warm amber CRT' },
-    { id: 'light',    name: 'Light',    desc: 'Light terminal' },
 ];
 
 function applyTheme(themeId) {
@@ -62,7 +62,7 @@ function applyTheme(themeId) {
 }
 
 function getStoredTheme() {
-    return localStorage.getItem('eye_theme') || 'light';
+    return localStorage.getItem('eye_theme') || 'default';
 }
 
 applyTheme(getStoredTheme());

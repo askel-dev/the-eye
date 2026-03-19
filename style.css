@@ -1,76 +1,76 @@
 /* === Theme Variables === */
 :root {
     /* Backgrounds */
-    --bg-primary: #0f0f0f;
-    --bg-sidebar: #0a0a0a;
-    --bg-hover: #111;
-    --bg-hint-hover: #141414;
+    --bg-primary: #e8e8e8;
+    --bg-sidebar: #dedede;
+    --bg-hover: #d0d0d0;
+    --bg-hint-hover: #c8c8c8;
 
     /* Text */
-    --text-primary: #b0b0b0;
-    --text-bright: #d0d0d0;
-    --text-white: #ffffff;
-    --text-msg: #d1d5db;
-    --text-msg-self: #e5e7eb;
-    --text-input: #b8b8b8;
-    --text-dim: #808080;
-    --text-dimmer: #6a6a6a;
-    --text-muted: #858585;
-    --text-muted-hover: #9a9a9a;
-    --text-contact-active: #c0c0c0;
-    --text-sidebar-header: #787878;
-    --text-sidebar-btn: #747474;
-    --text-sidebar-btn-hover: #c0c0c0;
-    --text-self-username: #888888;
-    --text-placeholder: #787878;
-    --text-filter-placeholder: #686868;
-    --text-watermark: #4a4a4a;
-    --text-help-desc: #8a8a8a;
+    --text-primary: #4a4a4a;
+    --text-bright: #1a1a1a;
+    --text-white: #000000;
+    --text-msg: #2a2a2a;
+    --text-msg-self: #1a1a1a;
+    --text-input: #3a3a3a;
+    --text-dim: #8a8a8a;
+    --text-dimmer: #9a9a9a;
+    --text-muted: #7a7a7a;
+    --text-muted-hover: #4a4a4a;
+    --text-contact-active: #1a1a1a;
+    --text-sidebar-header: #9a9a9a;
+    --text-sidebar-btn: #aaaaaa;
+    --text-sidebar-btn-hover: #4a4a4a;
+    --text-self-username: #7a7a7a;
+    --text-placeholder: #9a9a9a;
+    --text-filter-placeholder: #b0b0b0;
+    --text-watermark: #c8c8c8;
+    --text-help-desc: #7a7a7a;
 
     /* Accent (teal/green) */
-    --accent: #4a9a6a;
-    --accent-glow: #4a9a6a88;
-    --accent-light: #5aaa8a;
-    --accent-lighter: #7adaaa;
-    --accent-dim: #3a6a50;
-    --accent-dimmer: #2a5040;
-    --accent-channel: #5a9a7a;
-    --accent-channel-active: #7abb9a;
-    --accent-channel-badge: #4a7a5a;
-    --accent-cmd: #8aaa7a;
+    --accent: #2a6a4a;
+    --accent-glow: #2a6a4a44;
+    --accent-light: #1a5a3a;
+    --accent-lighter: #0a4a2a;
+    --accent-dim: #5a9a7a;
+    --accent-dimmer: #7aaa8a;
+    --accent-channel: #2a6a4a;
+    --accent-channel-active: #1a5a3a;
+    --accent-channel-badge: #5a9a7a;
+    --accent-cmd: #2a6a4a;
 
     /* Borders */
-    --border-primary: #2a2a2a;
-    --border-secondary: #262626;
-    --border-input: #333333;
-    --border-input-focus: #777;
+    --border-primary: #c0c0c0;
+    --border-secondary: #cccccc;
+    --border-input: #b0b0b0;
+    --border-input-focus: #666;
 
     /* Semantic */
-    --color-error: #9a4a4a;
-    --color-error-hover: #bb5a5a;
-    --color-admin-tag: #aa7a7a;
-    --color-login-btn: #9aacbc;
-    --color-send-btn: #5a8090;
-    --color-system-msg: #9a8a4a;
+    --color-error: #aa3a3a;
+    --color-error-hover: #cc4a4a;
+    --color-admin-tag: #8a5a5a;
+    --color-login-btn: #4a5a6a;
+    --color-send-btn: #7a8a9a;
+    --color-system-msg: #6a6a2a;
 
     /* Lock */
-    --lock-tag: #8a7a3a;
-    --lock-time: #6a5a2a;
-    --lock-sender: #9a8a4a;
-    --lock-sep: #5a4a2a;
-    --lock-text: #c8b868;
+    --lock-tag: #7a6a2a;
+    --lock-time: #8a8a4a;
+    --lock-sender: #6a5a1a;
+    --lock-sep: #b0b080;
+    --lock-text: #5a5a1a;
 
     /* Scrollbar */
-    --scrollbar-thumb: #222;
-    --scrollbar-track: #1e1e1e;
+    --scrollbar-thumb: #b0b0b0;
+    --scrollbar-track: #c0c0c0;
 
     /* Misc */
-    --offline-dot: #505050;
-    --offline-dot-large: #5e5e5e;
-    --contact-badge-off: #5e5e5e;
-    --contact-unread: #5a9a7a;
-    --logo-filter: brightness(0) invert(1);
-    --sidebar-logo-filter: brightness(0) invert(0.22);
+    --offline-dot: #c0c0c0;
+    --offline-dot-large: #aaaaaa;
+    --contact-badge-off: #c8c8c8;
+    --contact-unread: #2a6a4a;
+    --logo-filter: brightness(0) invert(0);
+    --sidebar-logo-filter: brightness(0) invert(0.7);
 }
 
 /* === Watermark === */
@@ -1368,68 +1368,68 @@ h1 {
 }
 
 /* Light — light terminal */
-[data-theme="light"] {
-    --bg-primary: #e8e8e8;
-    --bg-sidebar: #dedede;
-    --bg-hover: #d0d0d0;
-    --bg-hint-hover: #c8c8c8;
+[data-theme="dark"] {
+    --bg-primary: #0f0f0f;
+    --bg-sidebar: #0a0a0a;
+    --bg-hover: #111;
+    --bg-hint-hover: #141414;
 
-    --text-primary: #4a4a4a;
-    --text-bright: #1a1a1a;
-    --text-white: #000000;
-    --text-msg: #2a2a2a;
-    --text-msg-self: #1a1a1a;
-    --text-input: #3a3a3a;
-    --text-dim: #8a8a8a;
-    --text-dimmer: #9a9a9a;
-    --text-muted: #7a7a7a;
-    --text-muted-hover: #4a4a4a;
-    --text-contact-active: #1a1a1a;
-    --text-sidebar-header: #9a9a9a;
-    --text-sidebar-btn: #aaaaaa;
-    --text-sidebar-btn-hover: #4a4a4a;
-    --text-self-username: #7a7a7a;
-    --text-placeholder: #9a9a9a;
-    --text-filter-placeholder: #b0b0b0;
-    --text-watermark: #c8c8c8;
-    --text-help-desc: #7a7a7a;
+    --text-primary: #b0b0b0;
+    --text-bright: #d0d0d0;
+    --text-white: #ffffff;
+    --text-msg: #d1d5db;
+    --text-msg-self: #e5e7eb;
+    --text-input: #b8b8b8;
+    --text-dim: #808080;
+    --text-dimmer: #6a6a6a;
+    --text-muted: #858585;
+    --text-muted-hover: #9a9a9a;
+    --text-contact-active: #c0c0c0;
+    --text-sidebar-header: #787878;
+    --text-sidebar-btn: #747474;
+    --text-sidebar-btn-hover: #c0c0c0;
+    --text-self-username: #888888;
+    --text-placeholder: #787878;
+    --text-filter-placeholder: #686868;
+    --text-watermark: #4a4a4a;
+    --text-help-desc: #8a8a8a;
 
-    --accent: #2a6a4a;
-    --accent-glow: #2a6a4a44;
-    --accent-light: #1a5a3a;
-    --accent-lighter: #0a4a2a;
-    --accent-dim: #5a9a7a;
-    --accent-dimmer: #7aaa8a;
-    --accent-channel: #2a6a4a;
-    --accent-channel-active: #1a5a3a;
-    --accent-channel-badge: #5a9a7a;
-    --accent-cmd: #2a6a4a;
+    --accent: #4a9a6a;
+    --accent-glow: #4a9a6a88;
+    --accent-light: #5aaa8a;
+    --accent-lighter: #7adaaa;
+    --accent-dim: #3a6a50;
+    --accent-dimmer: #2a5040;
+    --accent-channel: #5a9a7a;
+    --accent-channel-active: #7abb9a;
+    --accent-channel-badge: #4a7a5a;
+    --accent-cmd: #8aaa7a;
 
-    --border-primary: #c0c0c0;
-    --border-secondary: #cccccc;
-    --border-input: #b0b0b0;
-    --border-input-focus: #666;
+    --border-primary: #2a2a2a;
+    --border-secondary: #262626;
+    --border-input: #333333;
+    --border-input-focus: #777;
 
-    --color-error: #aa3a3a;
-    --color-error-hover: #cc4a4a;
-    --color-admin-tag: #8a5a5a;
-    --color-login-btn: #4a5a6a;
-    --color-send-btn: #7a8a9a;
-    --color-system-msg: #6a6a2a;
+    --color-error: #9a4a4a;
+    --color-error-hover: #bb5a5a;
+    --color-admin-tag: #aa7a7a;
+    --color-login-btn: #9aacbc;
+    --color-send-btn: #5a8090;
+    --color-system-msg: #9a8a4a;
 
-    --lock-tag: #7a6a2a;
-    --lock-time: #8a8a4a;
-    --lock-sender: #6a5a1a;
-    --lock-sep: #b0b080;
-    --lock-text: #5a5a1a;
+    --lock-tag: #8a7a3a;
+    --lock-time: #6a5a2a;
+    --lock-sender: #9a8a4a;
+    --lock-sep: #5a4a2a;
+    --lock-text: #c8b868;
 
-    --scrollbar-thumb: #b0b0b0;
-    --scrollbar-track: #c0c0c0;
+    --scrollbar-thumb: #222;
+    --scrollbar-track: #1e1e1e;
 
-    --offline-dot: #c0c0c0;
-    --offline-dot-large: #aaaaaa;
-    --contact-badge-off: #c8c8c8;
-    --contact-unread: #2a6a4a;
-    --logo-filter: brightness(0) invert(0);
-    --sidebar-logo-filter: brightness(0) invert(0.7);
+    --offline-dot: #505050;
+    --offline-dot-large: #5e5e5e;
+    --contact-badge-off: #5e5e5e;
+    --contact-unread: #5a9a7a;
+    --logo-filter: brightness(0) invert(1);
+    --sidebar-logo-filter: brightness(0) invert(0.22);
 }
