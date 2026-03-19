@@ -395,17 +395,6 @@ h1 {
     color: var(--text-self-username);
 }
 
-#self-status-text {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    color: var(--accent);
-    padding-left: 16px;
-    display: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 /* === Sidebar Buttons === */
 .sidebar-btn {
     background: none;
@@ -562,17 +551,6 @@ h1 {
 
 .contact.channel-entry .contact-badge {
     color: var(--accent-channel-badge);
-}
-
-.contact-status {
-    display: block;
-    font-size: 10px;
-    color: var(--accent-dimmer);
-    letter-spacing: 0.05em;
-    margin-left: 18px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .channel-separator {

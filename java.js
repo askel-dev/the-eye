@@ -251,7 +251,6 @@ const COMMANDS = {
     lock:   { usage: '/lock [n]',       description: 'Lock/unlock message (survives /clear)', handler: cmdLock },
     who:    { usage: '/who',            description: 'Show online users',             handler: cmdWho },
     top:    { usage: '/top',            description: 'Show message leaderboard',      handler: cmdTop },
-    status: { usage: '/status <text>',  description: 'Set your status text',          handler: cmdStatus },
     color:  { usage: '/color list',     description: 'List or set your identity color', handler: cmdColor },
     theme:  { usage: '/theme list',     description: 'List or set UI color theme',     handler: cmdTheme },
     mute:   { usage: '/mute',           description: 'Toggle all sound effects',      handler: cmdMute },
@@ -429,31 +428,6 @@ function cmdWho() {
         const names = online.map(u => u.username).sort().join(', ');
         appendSystemMsg('ONLINE (' + online.length + '): ' + names);
     }
-}
-
-async function cmdStatus(args) {
-    if (!args) {
-        appendSystemMsg('USAGE: /status <text>  — set status');
-        appendSystemMsg('       /status remove  — clear status');
-        return;
-    }
-    const isRemove = args.trim().toLowerCase() === 'remove';
-    const text = isRemove ? null : args.slice(0, 100);
-    const { error } = await sb.from('profiles').update({ status_text: text }).eq('id', currentUser.id);
-    if (error) {
-        appendSystemMsg('ERROR SETTING STATUS');
-        console.error('cmdStatus error:', error);
-    } else {
-        updateSelfStatus(text);
-        appendSystemMsg(isRemove ? 'STATUS CLEARED' : 'STATUS SET: ' + text);
-    }
-}
-
-function updateSelfStatus(statusText) {
-    const el = document.getElementById('self-status-text');
-    if (!el) return;
-    el.textContent = statusText || '';
-    el.style.display = statusText ? 'block' : 'none';
 }
 
 async function cmdTop() {
@@ -700,8 +674,7 @@ function renderContacts() {
         el.innerHTML =
             `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
             `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
-            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>` +
-            (user.status_text ? `<span class="contact-status">${escapeHtml(user.status_text)}</span>` : '');
+            `<span class="contact-badge">${isOnline ? '[ON]' : '[OFF]'}</span>`;
         list.appendChild(el);
     }
 }
