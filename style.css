@@ -384,7 +384,7 @@ h1 {
 @media (max-width: 768px) {
     h1 {
         font-size: 30px;
-        word-spacing: 2em;
+        word-spacing: 2.5em;
         margin-top: -55px;
     }
 
@@ -395,22 +395,38 @@ h1 {
 
 @media (max-width: 480px) {
     h1 {
-        font-size: 22px;
-        word-spacing: 1.2em;
-        margin-top: -40px;
+        font-size: 30px;
+        word-spacing: 3.5em;
+        margin-top: -58px;
     }
 
     .logo {
-        height: 34px;
+        height: 46px;
     }
 
     .site-header {
-        margin-bottom: 30px;
+        margin-bottom: 48px;
         gap: 12px;
     }
 
     #login-form {
         max-width: 100%;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+
+    .bracket-wrap {
+        margin-bottom: 26px;
+    }
+
+    #username,
+    #password {
+        padding: 12px 4px;
+    }
+
+    #login-btn {
+        margin-top: 24px;
+        padding: 14px 0;
     }
 }
 
