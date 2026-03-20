@@ -15,7 +15,7 @@
         link.href = canvas.toDataURL();
         document.head.appendChild(link);
     };
-    img.src = 'assets/logo.png';
+    img.src = 'assets/logo.svg';
 })();
 
 // =============================================

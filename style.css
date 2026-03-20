@@ -105,6 +105,7 @@
         transform: translateY(-10px);
         filter: blur(6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -117,6 +118,7 @@
         opacity: 0;
         transform: translateY(14px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -125,15 +127,24 @@
 
 /* === Skeleton loading === */
 @keyframes skel-pulse {
-    0%, 100% { opacity: 0.08; }
-    50% { opacity: 0.18; }
+
+    0%,
+    100% {
+        opacity: 0.08;
+    }
+
+    50% {
+        opacity: 0.18;
+    }
 }
+
 .message.skeleton {
     display: flex;
     flex-direction: column;
     gap: 6px;
     padding: 8px 0;
 }
+
 .skel-line {
     display: block;
     height: 12px;
@@ -141,8 +152,14 @@
     background: var(--text-primary);
     animation: skel-pulse 1.2s ease-in-out infinite;
 }
-.skel-short { width: 90px; }
-.skel-long  { width: 60%; }
+
+.skel-short {
+    width: 90px;
+}
+
+.skel-long {
+    width: 60%;
+}
 
 body {
     display: flex;
@@ -175,16 +192,16 @@ body.chat-mode {
 
 .site-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 20px;
+    gap: 12px;
     margin-bottom: 48px;
     animation: emerge-down 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .logo {
-    height: 60px;
+    height: 77px;
     width: auto;
     filter: var(--logo-filter);
 }
@@ -192,12 +209,14 @@ body.chat-mode {
 h1 {
     color: var(--text-bright);
     font-size: 42px;
-    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-family: "Cinzel", serif;
     font-weight: normal;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     text-align: center;
     margin: 0;
+    margin-top: -80px;
+    word-spacing: 3em;
 }
 
 #login-form {
@@ -223,16 +242,67 @@ h1 {
     margin-left: auto;
 }
 
-#username {
+.bracket-wrap:nth-child(1) {
     animation: emerge-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.45s;
 }
 
-#password {
+.bracket-wrap:nth-child(2) {
     animation: emerge-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.6s;
+}
+
+/* === Bracket-wrap container === */
+.bracket-wrap {
+    position: relative;
+    padding: 6px 18px 0;
+    margin-bottom: 18px;
+}
+
+/* Left bracket */
+.bracket-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10px;
+    height: 100%;
+    border-top: 1px solid var(--border-input-focus);
+    border-bottom: 1px solid var(--border-input-focus);
+    border-left: 1px solid var(--border-input-focus);
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Right bracket */
+.bracket-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    border-top: 1px solid var(--border-input-focus);
+    border-bottom: 1px solid var(--border-input-focus);
+    border-right: 1px solid var(--border-input-focus);
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Show brackets on focus */
+.bracket-wrap:focus-within::before,
+.bracket-wrap:focus-within::after {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 #username,
 #password {
+    width: 100%;
     padding: 10px 4px;
     font-size: 16px;
     border: none;
@@ -242,8 +312,8 @@ h1 {
     color: var(--text-input);
     font-family: 'Share Tech Mono', 'Courier New', monospace;
     outline: none;
-    margin-bottom: 18px;
     text-align: center;
+    box-sizing: border-box;
     transition: border-color 0.2s;
 }
 
@@ -251,7 +321,6 @@ h1 {
 #password:focus {
     border-bottom-color: var(--border-input-focus);
     caret-color: var(--text-bright);
-    caret-shape: block;
 }
 
 #username::placeholder,
@@ -301,13 +370,22 @@ h1 {
 }
 
 @keyframes terminal-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 @media (max-width: 768px) {
     h1 {
         font-size: 30px;
+        word-spacing: 2em;
+        margin-top: -55px;
     }
 
     .logo {
@@ -318,10 +396,12 @@ h1 {
 @media (max-width: 480px) {
     h1 {
         font-size: 22px;
+        word-spacing: 1.2em;
+        margin-top: -40px;
     }
 
     .logo {
-        height: 40px;
+        height: 34px;
     }
 
     .site-header {
@@ -1035,7 +1115,7 @@ h1 {
     margin-bottom: 12px;
 }
 
-.help-title + .help-title {
+.help-title+.help-title {
     margin-top: 20px;
 }
 
@@ -1238,7 +1318,8 @@ h1 {
     #message-input {
         min-height: 36px;
         height: 36px;
-        font-size: 16px; /* prevents iOS zoom on focus */
+        font-size: 16px;
+        /* prevents iOS zoom on focus */
     }
 
     #input-area {

@@ -1,27 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="style.css">
-    <script>(function(){ var t = localStorage.getItem('eye_theme'); if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t); })();</script>
+    <script>(function () { var t = localStorage.getItem('eye_theme'); if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>The Eye</title>
-    <link rel="icon" type="image/x-icon" href="assets/logo.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/android-chrome-512x512.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
 
     <!-- LOGIN VIEW -->
     <div id="login-view">
         <header class="site-header">
-            <img src="assets/logo.png" alt="Logo" class="logo" />
+            <img src="assets/logo-thin.svg" alt="Logo" class="logo" />
             <h1>The Eye</h1>
-        </header>
+        </header>   
 
         <div id="login-form">
-            <input type="text" id="username" placeholder="username" autocomplete="off">
-            <input type="password" id="password" placeholder="password">
+            <div class="bracket-wrap">
+                <input type="text" id="username" placeholder="username" autocomplete="off">
+            </div>
+            <div class="bracket-wrap">
+                <input type="password" id="password" placeholder="password">
+            </div>
             <div id="login-error"></div>
-            <button id="login-btn" class="enter-btn"><span class="bracket left">[</span>&nbsp;ENTER<span class="cursor">_</span>&nbsp;<span class="bracket right">]</span></button>
+            <button id="login-btn" class="enter-btn"><span class="bracket left">[</span>&nbsp;ENTER<span
+                    class="cursor">_</span>&nbsp;<span class="bracket right">]</span></button>
         </div>
     </div>
 
@@ -31,12 +49,13 @@
 
         <div id="chat-sidebar">
             <div class="sidebar-header">
-                <img src="assets/logo.png" alt="Logo" class="sidebar-logo" />
+                <img src="assets/logo.svg" alt="Logo" class="sidebar-logo" />
                 <span>// CONTACTS</span>
             </div>
             <div class="contact-filter-wrap">
                 <span class="contact-filter-prefix">&gt;</span>
-                <input type="text" id="contact-filter" placeholder="search contacts..." autocomplete="off" spellcheck="false">
+                <input type="text" id="contact-filter" placeholder="search contacts..." autocomplete="off"
+                    spellcheck="false">
             </div>
             <div class="contact-list"></div>
             <div id="self-info">
@@ -45,15 +64,20 @@
                     <span id="self-username"></span>
                 </div>
             </div>
-            <button id="audio-toggle" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;<span id="audio-toggle-text">AUDIO: ON</span><span class="bracket right">]</span></button>
-            <button id="themes-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;THEMES<span class="bracket right">]</span></button>
-            <button id="help-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;?&nbsp;<span class="bracket right">]</span></button>
-            <button id="logout-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;EXIT<span class="bracket right">]</span></button>
+            <button id="audio-toggle" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;<span
+                    id="audio-toggle-text">AUDIO: ON</span><span class="bracket right">]</span></button>
+            <button id="themes-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;THEMES<span
+                    class="bracket right">]</span></button>
+            <button id="help-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;?&nbsp;<span
+                    class="bracket right">]</span></button>
+            <button id="logout-btn" class="sidebar-btn"><span class="bracket left">[</span>&nbsp;EXIT<span
+                    class="bracket right">]</span></button>
         </div>
 
         <div id="chat-main">
             <div id="chat-header">
-                <button id="sidebar-toggle"><span class="bracket left">[</span>&#x2261;<span class="bracket right">]</span></button>
+                <button id="sidebar-toggle"><span class="bracket left">[</span>&#x2261;<span
+                        class="bracket right">]</span></button>
                 <span id="chat-with-label">// ...</span>
                 <span id="chat-status-dot" class="status-dot online-dot"></span>
                 <span id="chat-status-label" class="online-label">[ONLINE]</span>
@@ -70,8 +94,10 @@
 
             <div id="input-area">
                 <span class="input-prefix">&gt;</span>
-                <input type="text" id="message-input" placeholder="type a message..." autocomplete="off" spellcheck="false">
-                <button id="send-btn"><span class="bracket left">[</span>&nbsp;&#x21B5;&nbsp;<span class="bracket right">]</span></button>
+                <input type="text" id="message-input" placeholder="type a message..." autocomplete="off"
+                    spellcheck="false">
+                <button id="send-btn"><span class="bracket left">[</span>&nbsp;&#x21B5;&nbsp;<span
+                        class="bracket right">]</span></button>
             </div>
         </div>
 
@@ -81,20 +107,25 @@
             <div id="help-modal-content">
                 <div class="help-title">// KEYBOARD SHORTCUTS</div>
                 <div class="help-section">
-                    <div class="help-row"><span class="help-key">Alt + Up/Down</span><span class="help-desc">Switch between contacts</span></div>
-                    <div class="help-row"><span class="help-key">Ctrl + K / J</span><span class="help-desc">Previous / next contact</span></div>
-                    <div class="help-row"><span class="help-key">Enter</span><span class="help-desc">Send message</span></div>
-                    <div class="help-row"><span class="help-key">Escape</span><span class="help-desc">Close this modal</span></div>
+                    <div class="help-row"><span class="help-key">Alt + Up/Down</span><span class="help-desc">Switch
+                            between contacts</span></div>
+                    <div class="help-row"><span class="help-key">Ctrl + K / J</span><span class="help-desc">Previous /
+                            next contact</span></div>
+                    <div class="help-row"><span class="help-key">Enter</span><span class="help-desc">Send message</span>
+                    </div>
+                    <div class="help-row"><span class="help-key">Escape</span><span class="help-desc">Close this
+                            modal</span></div>
                 </div>
                 <div class="help-title">// COMMANDS</div>
                 <div id="help-commands-section" class="help-section"></div>
-                <button id="help-close-btn"><span class="bracket left">[</span>&nbsp;CLOSE<span class="bracket right">]</span></button>
+                <button id="help-close-btn"><span class="bracket left">[</span>&nbsp;CLOSE<span
+                        class="bracket right">]</span></button>
             </div>
         </div>
     </div>
 
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     </style>
     <div id="watermark">made by cryptoler & cale_exe</div>
 
@@ -103,8 +134,9 @@
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="java.js"></script>
 </body>
+
 </html>
