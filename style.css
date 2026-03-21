@@ -198,12 +198,19 @@ body.chat-mode {
     gap: 12px;
     margin-bottom: 48px;
     animation: emerge-down 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    user-select: none;
+    -webkit-user-drag: none;
 }
+
+
 
 .logo {
     height: 77px;
     width: auto;
     filter: var(--logo-filter);
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
 }
 
 h1 {
@@ -462,12 +469,17 @@ h1 {
     display: flex;
     align-items: center;
     gap: 10px;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .sidebar-logo {
     height: 18px;
     width: auto;
     filter: var(--sidebar-logo-filter);
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
 }
 
 #self-info {
@@ -1631,8 +1643,8 @@ h1 {
     --offline-dot-large: #aaaaaa;
     --contact-badge-off: #c8c8c8;
     --contact-unread: #2a6a4a;
-    --logo-filter: brightness(0) invert(0);
-    --sidebar-logo-filter: brightness(0) invert(0.7);
+    --logo-filter: brightness(0) invert(1);
+    --sidebar-logo-filter: brightness(0) invert(1);
     --msg-own-border: rgba(74, 154, 106, 0.18);
     --msg-own-bg: rgba(74, 154, 106, 0.05);
     --system-divider: rgba(154, 138, 74, 0.35);
