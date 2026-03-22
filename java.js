@@ -1498,6 +1498,10 @@ function showPlaceholder() {
     document.getElementById('new-msg-indicator').classList.add('hidden');
     document.getElementById('cmd-hints').classList.add('hidden');
     launchApp('wm-welcome');
+    // On mobile, auto-open sidebar so user can pick a contact
+    if (window.innerWidth <= 600) {
+        document.body.classList.add('sidebar-open');
+    }
 }
 
 function hidePlaceholder() {
@@ -1506,6 +1510,7 @@ function hidePlaceholder() {
     document.getElementById('message-feed').classList.remove('hidden');
     document.getElementById('input-area').classList.remove('hidden');
     wmCloseAll();
+    closeSidebar();
 }
 
 function closeChat() {
@@ -2576,7 +2581,7 @@ async function wmSpawnLeaderboard() {
         id: 'app-leaderboard',
         title: 'LEADERBOARD',
         content: `<div class="lb-loading">loading...</div>`,
-        width: 280,
+        width: 380,
         height: 340,
     });
 

@@ -895,6 +895,7 @@ h1 {
     opacity: 0.06;
     width: 40%;
     max-width: 300px;
+    filter: var(--logo-filter);
     user-select: none;
     pointer-events: none;
     -webkit-user-drag: none;
@@ -1518,6 +1519,11 @@ h1 {
 
     #wm-desktop { bottom: 0; }
     #wm-taskbar { display: none; }
+
+    /* Keep header visible on mobile so toggle button is always accessible */
+    #chat-header.hidden {
+        display: flex !important;
+    }
 }
 
 /* ========================================
@@ -2029,7 +2035,8 @@ body.wm-dragging {
     --msg-own-border: rgba(74, 106, 154, 0.18);
     --msg-own-bg: rgba(74, 106, 154, 0.05);
     --system-divider: rgba(106, 122, 154, 0.35);
-    --sidebar-logo-filter: brightness(0) invert(0.18);
+    --logo-filter: brightness(0) invert(0.55) sepia(0.5) hue-rotate(200deg);
+    --sidebar-logo-filter: brightness(0) invert(0.35) sepia(0.5) hue-rotate(200deg);
 }
 
 /* Phosphor — classic green CRT */
@@ -2100,7 +2107,8 @@ body.wm-dragging {
     --msg-own-border: rgba(34, 170, 34, 0.18);
     --msg-own-bg: rgba(34, 170, 34, 0.05);
     --system-divider: rgba(34, 136, 34, 0.35);
-    --sidebar-logo-filter: brightness(0) invert(0.15);
+    --logo-filter: brightness(0) invert(1) sepia(1) hue-rotate(90deg) saturate(4);
+    --sidebar-logo-filter: brightness(0) invert(0.5) sepia(1) hue-rotate(90deg) saturate(4);
 }
 
 /* Amber — warm amber CRT */
@@ -2171,7 +2179,8 @@ body.wm-dragging {
     --msg-own-border: rgba(170, 136, 34, 0.18);
     --msg-own-bg: rgba(170, 136, 34, 0.05);
     --system-divider: rgba(136, 136, 34, 0.35);
-    --sidebar-logo-filter: brightness(0) invert(0.15);
+    --logo-filter: brightness(0) invert(0.7) sepia(1) saturate(3);
+    --sidebar-logo-filter: brightness(0) invert(0.6) sepia(1) saturate(2);
 }
 
 /* Light — light terminal */
