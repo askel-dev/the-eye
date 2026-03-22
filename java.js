@@ -2322,8 +2322,22 @@ registerApp({
         const content = `
             <div class="wm-section-title">// APPEARANCE</div>
             <div class="wm-settings-themes">${themeButtons}</div>
+
+            <div class="wm-section-title">// IDENTITY</div>
+            <div class="wm-settings-username-row">
+                <span class="wm-settings-label">username</span>
+                <div class="wm-settings-username-input-wrap">
+                    <input id="wm-settings-username-input" class="wm-settings-username-input"
+                           type="text" spellcheck="false" autocomplete="off"
+                           value="${escapeHtml(currentUser?.username || '')}" maxlength="32" />
+                    <button id="wm-settings-username-save" class="wm-settings-save-btn">
+                        <span class="bracket left">[</span>save<span class="bracket right">]</span>
+                    </button>
+                </div>
+                <div id="wm-settings-username-msg" class="wm-settings-msg"></div>
+            </div>
         `;
-        createWindow({ id: 'app-settings', title: 'SETTINGS', content, width: 300, height: 260 });
+        createWindow({ id: 'app-settings', title: 'SETTINGS', content, width: 300, height: 360 });
         const settingsWin = document.querySelector('.wm-window[data-wm-id="app-settings"]');
         if (settingsWin) {
             settingsWin.querySelectorAll('.wm-settings-theme-btn').forEach(btn => {
@@ -2333,6 +2347,51 @@ registerApp({
                     btn.classList.add('active');
                 });
             });
+
+            const usernameInput = settingsWin.querySelector('#wm-settings-username-input');
+            const saveBtn = settingsWin.querySelector('#wm-settings-username-save');
+            const msgEl = settingsWin.querySelector('#wm-settings-username-msg');
+
+            async function saveUsername() {
+                const newName = usernameInput.value.trim();
+                if (!newName) { msgEl.textContent = 'name cannot be empty'; msgEl.className = 'wm-settings-msg error'; return; }
+                if (newName === currentUser?.username) { msgEl.textContent = 'no change'; msgEl.className = 'wm-settings-msg'; return; }
+                saveBtn.disabled = true;
+                msgEl.textContent = 'saving...';
+                msgEl.className = 'wm-settings-msg';
+
+                // Update profile row first (catches duplicate name conflicts)
+                const { error: profileError } = await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
+                if (profileError) {
+                    saveBtn.disabled = false;
+                    msgEl.textContent = profileError.message.includes('unique') ? 'name already taken' : 'error saving';
+                    msgEl.className = 'wm-settings-msg error';
+                    return;
+                }
+
+                // Update auth email to match new username (keeps login working)
+                const newEmail = newName.toLowerCase() + '@theeye.local';
+                const { error: authError } = await sb.auth.updateUser({ email: newEmail });
+                if (authError) {
+                    // Profile was updated but auth email failed — revert profile to keep them in sync
+                    await sb.from('profiles').update({ username: currentUser.username }).eq('id', currentUser.id);
+                    saveBtn.disabled = false;
+                    msgEl.textContent = 'error updating login — try again';
+                    msgEl.className = 'wm-settings-msg error';
+                    return;
+                }
+
+                saveBtn.disabled = false;
+                currentUser.username = newName;
+                const selfEl = document.getElementById('self-username');
+                if (selfEl) selfEl.textContent = newName;
+                msgEl.textContent = 'saved';
+                msgEl.className = 'wm-settings-msg success';
+                setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2000);
+            }
+
+            saveBtn.addEventListener('click', saveUsername);
+            usernameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveUsername(); });
         }
     },
 });

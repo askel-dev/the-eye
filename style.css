@@ -1849,6 +1849,93 @@ body.wm-dragging {
     transform: translateX(2px);
 }
 
+.wm-settings-username-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.wm-settings-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+}
+
+.wm-settings-username-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wm-settings-username-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 12px;
+    padding: 3px 0;
+    outline: none;
+    min-width: 0;
+    transition: border-color 0.15s;
+}
+
+.wm-settings-username-input:focus {
+    border-color: var(--accent);
+}
+
+.wm-settings-save-btn {
+    background: none;
+    border: none;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--text-sidebar-btn);
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+    transition: color 0.15s;
+    flex-shrink: 0;
+}
+
+.wm-settings-save-btn:hover {
+    color: var(--accent);
+}
+
+.wm-settings-save-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.wm-settings-save-btn .bracket {
+    display: inline-block;
+    transition: transform 0.15s;
+}
+
+.wm-settings-save-btn:hover:not(:disabled) .bracket.left {
+    transform: translateX(-2px);
+}
+
+.wm-settings-save-btn:hover:not(:disabled) .bracket.right {
+    transform: translateX(2px);
+}
+
+.wm-settings-msg {
+    font-size: 10px;
+    color: var(--text-muted);
+    min-height: 14px;
+    letter-spacing: 0.06em;
+}
+
+.wm-settings-msg.error {
+    color: var(--color-error, #aa3a3a);
+}
+
+.wm-settings-msg.success {
+    color: var(--accent);
+}
+
 /* ========================================
    THEMES
    ======================================== */
