@@ -965,6 +965,27 @@ h1 {
     color: var(--text-msg-self);
 }
 
+.message .msg-audio-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-msg);
+    padding: 1px 8px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: color 0.12s, border-color 0.12s;
+}
+
+.message .msg-audio-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.message.self .msg-audio-btn {
+    color: var(--text-msg-self);
+}
+
 .message.self {
     border-left-color: var(--msg-own-border);
 }
@@ -2233,6 +2254,64 @@ body.wm-dragging {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
     margin-bottom: 14px;
+}
+
+.sb-picker {
+    position: absolute;
+    z-index: 100;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+}
+
+.sb-picker-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.1s, background 0.1s;
+}
+
+.sb-picker-item:last-child {
+    border-bottom: none;
+}
+
+.sb-picker-item:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.sb-item {
+    display: flex;
+    gap: 4px;
+}
+
+.sb-item .sb-btn {
+    flex: 1;
+}
+
+.sb-send-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-dim);
+    padding: 0 6px;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+    flex-shrink: 0;
+}
+
+.sb-send-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 .sb-btn {

@@ -872,16 +872,30 @@ function appendMessage(msg, animate = true) {
         lockedMessages.add(lockKey);
     }
 
+    const audioMatch = msg.body ? msg.body.match(/^\[AUDIO:(\d+)\]$/) : null;
+    const bodyContent = audioMatch
+        ? `<button class="msg-audio-btn" data-audio-id="${audioMatch[1]}">[♪] AUDIO ${String(audioMatch[1]).padStart(2, '0')}</button>`
+        : `<span class="msg-text">${escapeHtml(msg.body)}</span>`;
+
     el.innerHTML =
         `<span class="msg-time">${time}</span>` +
         ` <span class="msg-sender" style="color:${senderColor}">${escapeHtml(senderName)}</span>` +
         (isAdmin ? `<span class="msg-admin-tag">[ADMIN]</span>` : '') +
         `<span class="msg-lock-tag${isLocked ? '' : ' hidden'}">[LOCKED]</span>` +
         `<span class="msg-sep">></span>` +
-        `<span class="msg-text">${escapeHtml(msg.body)}</span>` +
+        bodyContent +
         `<button class="msg-lock-btn" title="Lock message">${isLocked ? '[UNLOCK]' : '[LOCK]'}</button>`;
 
     if (isLocked) el.classList.add('locked');
+
+    // Audio message play button
+    const audioBtn = el.querySelector('.msg-audio-btn');
+    if (audioBtn) {
+        audioBtn.addEventListener('click', () => {
+            const audio = new Audio(`Audios/audio${audioBtn.dataset.audioId}.mp3`);
+            audio.play();
+        });
+    }
 
     // Lock button click
     el.querySelector('.msg-lock-btn').addEventListener('click', (e) => {
@@ -1262,6 +1276,26 @@ async function sendMessage() {
             lastMessageTime.set(activeContact.id, Date.now());
             renderContacts();
         }
+    }
+}
+
+async function sendAudioMessage(audioId, { userId, channel } = {}) {
+    const body = `[AUDIO:${audioId}]`;
+    if (channel) {
+        const { error } = await sb.from('channel_messages').insert({
+            sender_id: currentUser.id,
+            channel,
+            body
+        });
+        if (error) console.error('sendAudioMessage error:', error);
+    } else if (userId) {
+        const { error } = await sb.from('messages').insert({
+            sender_id: currentUser.id,
+            recipient_id: userId,
+            body
+        });
+        if (error) console.error('sendAudioMessage error:', error);
+        else { lastMessageTime.set(userId, Date.now()); renderContacts(); }
     }
 }
 
@@ -2417,7 +2451,10 @@ function wmSpawnSoundboard() {
     ];
 
     const buttons = sounds.map(s =>
-        `<button class="sb-btn" data-src="Audios/audio${s.id}.mp3">${s.label}</button>`
+        `<div class="sb-item">` +
+        `<button class="sb-btn" data-src="Audios/audio${s.id}.mp3" data-id="${s.id}">${s.label}</button>` +
+        `<button class="sb-send-btn" data-id="${s.id}" title="Send to chat">[↑]</button>` +
+        `</div>`
     ).join('');
 
     const content = `
@@ -2435,6 +2472,47 @@ function wmSpawnSoundboard() {
     const activeAudios = new Map(); // src → Audio
     const win = document.querySelector('.wm-window[data-wm-id="app-soundboard"]');
     if (!win) return;
+
+    function showSendPicker(sendBtn, audioId) {
+        const existing = win.querySelector('.sb-picker');
+        if (existing) { existing.remove(); return; }
+
+        const picker = document.createElement('div');
+        picker.className = 'sb-picker';
+
+        const targets = [{ label: '#GLOBAL', type: 'channel', id: 'GLOBAL' }];
+        allUsers.forEach(u => {
+            if (u.id !== currentUser.id && onlineIds.has(u.id)) {
+                targets.push({ label: u.username, type: 'dm', id: u.id });
+            }
+        });
+
+        picker.innerHTML = targets.map(t =>
+            `<button class="sb-picker-item" data-type="${t.type}" data-id="${t.id}">${escapeHtml(t.label)}</button>`
+        ).join('');
+
+        const btnRect = sendBtn.getBoundingClientRect();
+        const bodyRect = win.querySelector('.wm-body').getBoundingClientRect();
+        picker.style.top = (btnRect.bottom - bodyRect.top) + 'px';
+        picker.style.left = (btnRect.left - bodyRect.left) + 'px';
+
+        win.querySelector('.wm-body').appendChild(picker);
+
+        picker.querySelectorAll('.sb-picker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.type === 'channel') {
+                    sendAudioMessage(audioId, { channel: item.dataset.id });
+                } else {
+                    sendAudioMessage(audioId, { userId: item.dataset.id });
+                }
+                picker.remove();
+            });
+        });
+
+        setTimeout(() => {
+            document.addEventListener('click', () => picker.remove(), { once: true });
+        }, 0);
+    }
 
     function stopAll() {
         activeAudios.forEach(audio => { audio.pause(); audio.currentTime = 0; });
@@ -2463,6 +2541,10 @@ function wmSpawnSoundboard() {
                 btn.classList.add('sb-btn-active');
             }
         });
+    });
+
+    win.querySelectorAll('.sb-send-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); showSendPicker(btn, btn.dataset.id); });
     });
 
     win.querySelector('.sb-stop').addEventListener('click', stopAll);
