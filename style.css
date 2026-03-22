@@ -646,11 +646,27 @@ h1 {
     box-sizing: border-box;
 }
 
-.contact-name {
+.contact-name-group {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.contact-last-seen {
+    font-size: 0.68rem;
+    opacity: 0.45;
+    line-height: 1.3;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Contact section headers (Online/Offline groups) */

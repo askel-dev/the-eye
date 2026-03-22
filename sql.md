@@ -253,3 +253,13 @@ language sql security definer as $$
   order by total_count desc;
 $$;
 
+
+-- ============================================
+-- 9. ADD LAST SEEN TIMESTAMP TO PROFILES
+-- ============================================
+-- Tracks when each user was last active. Updated on login, every 2 minutes
+-- while online, and on logout. The existing owner-update RLS policy covers this.
+
+alter table public.profiles
+    add column if not exists last_seen_at timestamptz default now();
+

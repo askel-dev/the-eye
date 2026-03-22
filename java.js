@@ -43,6 +43,18 @@ function getColorHex(colorId) {
     return entry ? entry.hex : '#8A9A7A'; // fallback = Sage (id 1)
 }
 
+function formatLastSeen(ts) {
+    if (!ts) return 'a while ago';
+    const diff = Date.now() - new Date(ts).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+}
+
 // UI color themes
 const THEMES = [
     { id: 'default',  name: 'Default',  desc: 'Light terminal' },
@@ -97,6 +109,7 @@ let lastMessageTime     = new Map(); // userId → timestamp (ms) for sorting co
 let unreadCounts        = new Map(); // userId → unread message count
 let favoriteIds         = new Set(JSON.parse(localStorage.getItem('eye_favorites') || '[]'));
 function persistFavorites() { localStorage.setItem('eye_favorites', JSON.stringify(Array.from(favoriteIds))); }
+let lastSeenInterval    = null;
 
 function toggleFavorite(userId) {
     if (favoriteIds.has(userId)) {
@@ -726,6 +739,12 @@ function renderContacts() {
         return count ? `<span class="contact-unread" data-count="${count}">[${count}]</span>` : '';
     }
 
+    function nameGroup(user, isOnline) {
+        const color = getColorHex(user.color_id);
+        const lastSeen = isOnline ? '' : `<span class="contact-last-seen">seen ${formatLastSeen(user.last_seen_at)}</span>`;
+        return `<span class="contact-name-group"><span class="contact-name" style="color:${color}">${escapeHtml(user.username)}</span>${lastSeen}</span>`;
+    }
+
     // Favorites section (only if any)
     if (favoriteUsers.length > 0) {
         const favHeader = document.createElement('div');
@@ -736,13 +755,12 @@ function renderContacts() {
         for (const user of favoriteUsers) {
             const isOnline = onlineIds.has(user.id);
             const el = document.createElement('div');
-            const userColor = getColorHex(user.color_id);
             el.className = 'contact ' + (isOnline ? 'contact-online' : 'contact-offline') +
                 (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
             el.dataset.userId = user.id;
             el.innerHTML =
                 `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>` +
-                `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
+                nameGroup(user, isOnline) +
                 unreadBadge(user.id) +
                 `<span class="contact-fav is-fav" data-fav-id="${user.id}" title="Remove from favorites">\u2605</span>`;
             list.appendChild(el);
@@ -757,12 +775,11 @@ function renderContacts() {
 
     for (const user of onlineUsers) {
         const el = document.createElement('div');
-        const userColor = getColorHex(user.color_id);
         el.className = 'contact contact-online' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
             `<span class="status-dot online"></span>` +
-            `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
+            nameGroup(user, true) +
             unreadBadge(user.id) +
             `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
         list.appendChild(el);
@@ -776,12 +793,11 @@ function renderContacts() {
 
     for (const user of offlineUsers) {
         const el = document.createElement('div');
-        const userColor = getColorHex(user.color_id);
         el.className = 'contact contact-offline' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
         el.innerHTML =
             `<span class="status-dot offline"></span>` +
-            `<span class="contact-name" style="color:${userColor}">${escapeHtml(user.username)}</span>` +
+            nameGroup(user, false) +
             unreadBadge(user.id) +
             `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
         list.appendChild(el);
@@ -928,8 +944,13 @@ function updateHeader(contact, isOnline) {
     const headerLabel = document.getElementById('chat-with-label');
     headerLabel.innerHTML = `// <span style="color:${contactColor}">${escapeHtml(contact.username)}</span>`;
     const statusLabel = document.getElementById('chat-status-label');
-    statusLabel.textContent = isOnline ? '[ONLINE]' : '[OFFLINE]';
-    statusLabel.className = isOnline ? 'online-label' : 'offline-label';
+    if (isOnline) {
+        statusLabel.textContent = '[ONLINE]';
+        statusLabel.className = 'online-label';
+    } else {
+        statusLabel.textContent = `[last seen ${formatLastSeen(contact.last_seen_at)}]`;
+        statusLabel.className = 'offline-label';
+    }
     const dot = document.getElementById('chat-status-dot');
     dot.className = isOnline ? 'status-dot online-dot' : 'status-dot offline-dot';
 }
@@ -1002,7 +1023,7 @@ async function enterChat(userId, username) {
     currentUser = { id: userId, username };
 
     // Fetch all profiles (including color_id)
-    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin, status_text, color_id').order('username');
+    const { data: profiles } = await sb.from('profiles').select('id, username, is_admin, status_text, color_id, last_seen_at').order('username');
     allUsers = profiles || [];
 
     // Set own color_id on currentUser
@@ -1027,6 +1048,13 @@ async function enterChat(userId, username) {
     subscribeToLocks();
     joinPresence();
 
+    // Update last_seen_at on login and every 2 minutes while active
+    async function heartbeatLastSeen() {
+        await sb.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', currentUser.id);
+    }
+    heartbeatLastSeen();
+    lastSeenInterval = setInterval(heartbeatLastSeen, 2 * 60 * 1000);
+
     // Auto-select first contact
     const first = allUsers.find(u => u.id !== currentUser.id);
     if (first) {
@@ -1037,6 +1065,11 @@ async function enterChat(userId, username) {
 }
 
 async function handleLogout() {
+    clearInterval(lastSeenInterval);
+    lastSeenInterval = null;
+    if (currentUser) {
+        await sb.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', currentUser.id);
+    }
     await leavePresence();
     unsubscribeAll();
     await sb.auth.signOut();
