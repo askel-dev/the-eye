@@ -1075,13 +1075,9 @@ async function enterChat(userId, username) {
     heartbeatLastSeen();
     lastSeenInterval = setInterval(heartbeatLastSeen, 2 * 60 * 1000);
 
-    // Auto-select first contact
-    const first = allUsers.find(u => u.id !== currentUser.id);
-    if (first) {
-        switchContact(first.id);
-    }
+    // Show placeholder until user picks a contact
+    showPlaceholder();
 
-    document.getElementById('message-input').focus();
 }
 
 async function handleLogout() {
@@ -1449,12 +1445,40 @@ async function leavePresence() {
 // =============================================
 // 9. CONTACT SWITCHING
 // =============================================
+function showPlaceholder() {
+    document.getElementById('chat-placeholder').classList.remove('hidden');
+    document.getElementById('chat-header').classList.add('hidden');
+    document.getElementById('message-feed').classList.add('hidden');
+    document.getElementById('input-area').classList.add('hidden');
+    document.getElementById('typing-indicator').classList.add('hidden');
+    document.getElementById('new-msg-indicator').classList.add('hidden');
+    document.getElementById('cmd-hints').classList.add('hidden');
+    if (WM.windows.size === 0) wmSpawnWelcome();
+}
+
+function hidePlaceholder() {
+    document.getElementById('chat-placeholder').classList.add('hidden');
+    document.getElementById('chat-header').classList.remove('hidden');
+    document.getElementById('message-feed').classList.remove('hidden');
+    document.getElementById('input-area').classList.remove('hidden');
+    wmCloseAll();
+}
+
+function closeChat() {
+    activeContact = null;
+    activeChannel = null;
+    viewMode = 'dm';
+    document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+    showPlaceholder();
+}
+
 async function switchContact(userId) {
-    if (viewMode === 'dm' && activeContact && activeContact.id === userId) return;
+    if (viewMode === 'dm' && activeContact && activeContact.id === userId) { closeChat(); return; }
 
     const contact = allUsers.find(u => u.id === userId);
     if (!contact) return;
 
+    hidePlaceholder();
     viewMode = 'dm';
     activeChannel = null;
     activeContact = contact;
@@ -1480,8 +1504,9 @@ async function switchContact(userId) {
 }
 
 async function switchToChannel(channelName) {
-    if (viewMode === 'channel' && activeChannel === channelName) return;
+    if (viewMode === 'channel' && activeChannel === channelName) { closeChat(); return; }
 
+    hidePlaceholder();
     viewMode = 'channel';
     activeChannel = channelName;
     activeContact = null;
@@ -1558,6 +1583,8 @@ document.getElementById('new-msg-indicator').addEventListener('click', () => {
 document.getElementById('login-btn').addEventListener('click', handleLogin);
 
 document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+document.getElementById('close-chat-btn').addEventListener('click', closeChat);
 
 document.getElementById('send-btn').addEventListener('click', sendMessage);
 
@@ -1863,6 +1890,279 @@ function closeHelpModal() {
 document.getElementById('help-btn').addEventListener('click', openHelpModal);
 document.getElementById('help-modal-backdrop').addEventListener('click', closeHelpModal);
 document.getElementById('help-close-btn').addEventListener('click', closeHelpModal);
+
+// =============================================
+// WINDOW MANAGER
+// =============================================
+const WM = {
+    windows: new Map(),
+    nextId: 1,
+    topZ: 10,
+    dragState: null,
+    resizeState: null,
+};
+
+function createWindow({ title = 'UNTITLED', content = '', width = 400, height = 300, x, y, id } = {}) {
+    const winId = id || `wm-win-${WM.nextId++}`;
+    const desktop = document.getElementById('wm-desktop');
+    if (!desktop) return null;
+
+    const bounds = desktop.getBoundingClientRect();
+
+    if (x === undefined) x = Math.max(10, (bounds.width - width) / 2 + (WM.nextId * 20) % 60);
+    if (y === undefined) y = Math.max(10, (bounds.height - height) / 2 + (WM.nextId * 20) % 40);
+
+    x = Math.min(x, bounds.width - 100);
+    y = Math.min(y, bounds.height - 40);
+
+    const win = document.createElement('div');
+    win.className = 'wm-window';
+    win.dataset.wmId = winId;
+    win.style.left = x + 'px';
+    win.style.top = y + 'px';
+    win.style.width = width + 'px';
+    win.style.height = height + 'px';
+    win.style.zIndex = ++WM.topZ;
+
+    win.innerHTML = `
+        <div class="wm-titlebar">
+            <span class="wm-title">// ${title.toUpperCase()}</span>
+            <div class="wm-controls">
+                <button class="wm-btn wm-btn-min" title="Minimize">
+                    <span class="bracket left">[</span>_<span class="bracket right">]</span>
+                </button>
+                <button class="wm-btn wm-btn-max" title="Maximize">
+                    <span class="bracket left">[</span>&#9633;<span class="bracket right">]</span>
+                </button>
+                <button class="wm-btn wm-btn-close" title="Close">
+                    <span class="bracket left">[</span>&times;<span class="bracket right">]</span>
+                </button>
+            </div>
+        </div>
+        <div class="wm-body"></div>
+        <div class="wm-resize-handle"></div>
+    `;
+
+    const body = win.querySelector('.wm-body');
+    if (typeof content === 'string') {
+        body.innerHTML = content;
+    } else if (content instanceof HTMLElement) {
+        body.appendChild(content);
+    }
+
+    win.addEventListener('mousedown', () => wmFocus(winId));
+
+    const titlebar = win.querySelector('.wm-titlebar');
+    titlebar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.wm-btn')) return;
+        wmStartDrag(e, winId);
+    });
+    titlebar.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.wm-btn')) return;
+        wmStartDrag(e, winId);
+    }, { passive: false });
+
+    const handle = win.querySelector('.wm-resize-handle');
+    handle.addEventListener('mousedown', (e) => wmStartResize(e, winId));
+    handle.addEventListener('touchstart', (e) => wmStartResize(e, winId), { passive: false });
+
+    win.querySelector('.wm-btn-min').addEventListener('click', () => wmMinimize(winId));
+    win.querySelector('.wm-btn-max').addEventListener('click', () => wmToggleMaximize(winId));
+    win.querySelector('.wm-btn-close').addEventListener('click', () => wmClose(winId));
+
+    titlebar.addEventListener('dblclick', () => wmToggleMaximize(winId));
+
+    desktop.appendChild(win);
+
+    WM.windows.set(winId, {
+        el: win,
+        options: { title, width, height },
+        minimized: false,
+        maximized: false,
+        prevBounds: null,
+    });
+
+    wmFocus(winId);
+    return winId;
+}
+
+function wmFocus(winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry || entry.minimized) return;
+    WM.windows.forEach(w => w.el.classList.remove('wm-focused'));
+    entry.el.classList.add('wm-focused');
+    entry.el.style.zIndex = ++WM.topZ;
+}
+
+function wmStartDrag(e, winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry || entry.maximized) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    WM.dragState = {
+        winId,
+        startX: pt.clientX,
+        startY: pt.clientY,
+        startLeft: parseInt(entry.el.style.left),
+        startTop: parseInt(entry.el.style.top),
+    };
+    document.body.classList.add('wm-dragging');
+}
+
+function wmStartResize(e, winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry || entry.maximized) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const pt = e.touches ? e.touches[0] : e;
+    WM.resizeState = {
+        winId,
+        startX: pt.clientX,
+        startY: pt.clientY,
+        startW: entry.el.offsetWidth,
+        startH: entry.el.offsetHeight,
+    };
+    document.body.classList.add('wm-dragging');
+}
+
+function wmOnPointerMove(e) {
+    if (WM.dragState) {
+        const pt = e.touches ? e.touches[0] : e;
+        const entry = WM.windows.get(WM.dragState.winId);
+        if (!entry) return;
+        const desktop = document.getElementById('wm-desktop');
+        const bounds = desktop.getBoundingClientRect();
+        const dx = pt.clientX - WM.dragState.startX;
+        const dy = pt.clientY - WM.dragState.startY;
+        let newLeft = WM.dragState.startLeft + dx;
+        let newTop = WM.dragState.startTop + dy;
+        newLeft = Math.max(-entry.el.offsetWidth + 60, Math.min(newLeft, bounds.width - 60));
+        newTop = Math.max(0, Math.min(newTop, bounds.height - 30));
+        entry.el.style.left = newLeft + 'px';
+        entry.el.style.top = newTop + 'px';
+    }
+    if (WM.resizeState) {
+        const pt = e.touches ? e.touches[0] : e;
+        const entry = WM.windows.get(WM.resizeState.winId);
+        if (!entry) return;
+        const dx = pt.clientX - WM.resizeState.startX;
+        const dy = pt.clientY - WM.resizeState.startY;
+        entry.el.style.width = Math.max(220, WM.resizeState.startW + dx) + 'px';
+        entry.el.style.height = Math.max(120, WM.resizeState.startH + dy) + 'px';
+    }
+}
+
+function wmOnPointerUp() {
+    WM.dragState = null;
+    WM.resizeState = null;
+    document.body.classList.remove('wm-dragging');
+}
+
+document.addEventListener('mousemove', wmOnPointerMove);
+document.addEventListener('mouseup', wmOnPointerUp);
+document.addEventListener('touchmove', wmOnPointerMove, { passive: false });
+document.addEventListener('touchend', wmOnPointerUp);
+
+function wmMinimize(winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry) return;
+    entry.minimized = true;
+    entry.el.style.display = 'none';
+
+    const taskbar = document.getElementById('wm-taskbar');
+    const btn = document.createElement('button');
+    btn.className = 'wm-taskbar-entry';
+    btn.dataset.wmId = winId;
+    btn.textContent = entry.options.title;
+    btn.addEventListener('click', () => wmRestore(winId));
+    taskbar.appendChild(btn);
+}
+
+function wmRestore(winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry) return;
+    entry.minimized = false;
+    entry.el.style.display = 'flex';
+    wmFocus(winId);
+
+    const taskbar = document.getElementById('wm-taskbar');
+    const btn = taskbar.querySelector(`[data-wm-id="${winId}"]`);
+    if (btn) btn.remove();
+}
+
+function wmToggleMaximize(winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry) return;
+    if (entry.maximized) {
+        const b = entry.prevBounds;
+        entry.el.style.left = b.left;
+        entry.el.style.top = b.top;
+        entry.el.style.width = b.width;
+        entry.el.style.height = b.height;
+        entry.el.classList.remove('wm-maximized');
+        entry.maximized = false;
+    } else {
+        entry.prevBounds = {
+            left: entry.el.style.left,
+            top: entry.el.style.top,
+            width: entry.el.style.width,
+            height: entry.el.style.height,
+        };
+        entry.el.classList.add('wm-maximized');
+        entry.maximized = true;
+    }
+}
+
+function wmClose(winId) {
+    const entry = WM.windows.get(winId);
+    if (!entry) return;
+    entry.el.remove();
+    WM.windows.delete(winId);
+
+    const taskbar = document.getElementById('wm-taskbar');
+    const btn = taskbar?.querySelector(`[data-wm-id="${winId}"]`);
+    if (btn) btn.remove();
+}
+
+function wmCloseAll() {
+    WM.windows.forEach((_, id) => wmClose(id));
+}
+
+function wmSpawnWelcome() {
+    const username = currentUser?.username || 'operator';
+    const theme = getStoredTheme();
+    const content = `
+        <div class="wm-welcome">
+            <div class="wm-welcome-greeting">&gt; welcome back, <span class="wm-welcome-user">${username}</span></div>
+
+            <div class="wm-section-title">// QUICK START</div>
+            <div class="wm-tip-list">
+                <div class="wm-tip"><span class="wm-tip-key">Alt+Up/Down</span><span class="wm-tip-desc">switch contacts</span></div>
+                <div class="wm-tip"><span class="wm-tip-key">Ctrl+K / J</span><span class="wm-tip-desc">prev / next contact</span></div>
+                <div class="wm-tip"><span class="wm-tip-key">/help</span><span class="wm-tip-desc">list all commands</span></div>
+                <div class="wm-tip"><span class="wm-tip-key">/lock</span><span class="wm-tip-desc">send a locked message</span></div>
+                <div class="wm-tip"><span class="wm-tip-key">/color</span><span class="wm-tip-desc">change your name color</span></div>
+            </div>
+
+            <div class="wm-section-title">// STATUS</div>
+            <div class="wm-tip-list">
+                <div class="wm-status-row">session <span class="wm-status-val">active</span></div>
+                <div class="wm-status-row">theme <span class="wm-status-val">${theme}</span></div>
+                <div class="wm-status-row">version <span class="wm-status-val">1.0.0</span></div>
+            </div>
+
+            <div class="wm-welcome-footer"><span class="wm-blink">_</span> select a contact to begin</div>
+        </div>
+    `;
+
+    createWindow({
+        title: 'WELCOME',
+        content,
+        width: 360,
+        height: 340,
+        id: 'wm-welcome',
+    });
+}
 
 //=============================================
 // BOOT
