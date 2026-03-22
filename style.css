@@ -1747,6 +1747,108 @@ body.wm-dragging {
     user-select: none;
 }
 
+/* Desktop icons */
+.wm-icon {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    user-select: none;
+    width: 72px;
+    padding: 6px;
+    z-index: 1;
+}
+
+.wm-icon-symbol {
+    width: 52px;
+    height: 40px;
+    border: 1px solid var(--border-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.wm-icon-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-align: center;
+    word-break: break-all;
+}
+
+.wm-icon:hover .wm-icon-symbol {
+    border-color: var(--border-primary);
+    color: var(--text-primary);
+}
+
+.wm-icon.wm-icon-selected .wm-icon-symbol {
+    border-color: var(--accent);
+    color: var(--text-bright);
+    box-shadow: 0 0 4px var(--accent-glow, rgba(0, 0, 0, 0.1));
+}
+
+.wm-icon.wm-icon-selected .wm-icon-label {
+    color: var(--text-primary);
+}
+
+/* Settings app */
+.wm-settings-themes {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 8px;
+}
+
+.wm-settings-theme-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 12px;
+    text-align: left;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.15s;
+}
+
+.wm-settings-theme-btn:hover {
+    color: var(--text-primary);
+}
+
+.wm-settings-theme-btn.active {
+    color: var(--accent);
+}
+
+.wm-settings-theme-name {
+    margin-left: 10px;
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.wm-settings-theme-btn.active .wm-settings-theme-name {
+    color: var(--text-dim);
+}
+
+.wm-settings-theme-btn .bracket {
+    display: inline-block;
+    transition: transform 0.15s;
+}
+
+.wm-settings-theme-btn:hover .bracket.left {
+    transform: translateX(-2px);
+}
+
+.wm-settings-theme-btn:hover .bracket.right {
+    transform: translateX(2px);
+}
+
 /* ========================================
    THEMES
    ======================================== */

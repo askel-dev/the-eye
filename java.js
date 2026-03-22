@@ -1453,7 +1453,7 @@ function showPlaceholder() {
     document.getElementById('typing-indicator').classList.add('hidden');
     document.getElementById('new-msg-indicator').classList.add('hidden');
     document.getElementById('cmd-hints').classList.add('hidden');
-    if (WM.windows.size === 0) wmSpawnWelcome();
+    launchApp('wm-welcome');
 }
 
 function hidePlaceholder() {
@@ -1900,6 +1900,9 @@ const WM = {
     topZ: 10,
     dragState: null,
     resizeState: null,
+    apps: new Map(),
+    selectedIcon: null,
+    iconDragState: null,
 };
 
 function createWindow({ title = 'UNTITLED', content = '', width = 400, height = 300, x, y, id } = {}) {
@@ -2050,11 +2053,35 @@ function wmOnPointerMove(e) {
         entry.el.style.width = Math.max(220, WM.resizeState.startW + dx) + 'px';
         entry.el.style.height = Math.max(120, WM.resizeState.startH + dy) + 'px';
     }
+    if (WM.iconDragState) {
+        const pt = e.touches ? e.touches[0] : e;
+        const dx = pt.clientX - WM.iconDragState.startX;
+        const dy = pt.clientY - WM.iconDragState.startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            WM.iconDragState.moved = true;
+        }
+        if (WM.iconDragState.moved) {
+            const el = WM.iconDragState.el;
+            const desktop = document.getElementById('wm-desktop');
+            const bounds = desktop.getBoundingClientRect();
+            let newLeft = WM.iconDragState.startLeft + dx;
+            let newTop = WM.iconDragState.startTop + dy;
+            newLeft = Math.max(0, Math.min(newLeft, bounds.width - el.offsetWidth));
+            newTop = Math.max(0, Math.min(newTop, bounds.height - el.offsetHeight));
+            el.style.left = newLeft + 'px';
+            el.style.top = newTop + 'px';
+        }
+    }
 }
 
 function wmOnPointerUp() {
+    if (WM.iconDragState && !WM.iconDragState.moved) {
+        // Treat as click — select the icon
+        wmSelectIcon(WM.iconDragState.el);
+    }
     WM.dragState = null;
     WM.resizeState = null;
+    WM.iconDragState = null;
     document.body.classList.remove('wm-dragging');
 }
 
@@ -2062,6 +2089,100 @@ document.addEventListener('mousemove', wmOnPointerMove);
 document.addEventListener('mouseup', wmOnPointerUp);
 document.addEventListener('touchmove', wmOnPointerMove, { passive: false });
 document.addEventListener('touchend', wmOnPointerUp);
+
+// App registry
+function registerApp({ id, name, symbol, launch }) {
+    WM.apps.set(id, { id, name, symbol, launch });
+    const idx = WM.apps.size - 1;
+    createDesktopIcon(id, 16, 16 + idx * 90);
+}
+
+function launchApp(id) {
+    const app = WM.apps.get(id);
+    if (!app) return;
+    const winEntry = WM.windows.get(id);
+    if (winEntry) {
+        if (winEntry.minimized) wmRestore(id);
+        else wmFocus(id);
+        return;
+    }
+    app.launch();
+}
+
+function createDesktopIcon(appId, x, y) {
+    const desktop = document.getElementById('wm-desktop');
+    if (!desktop) return;
+    const app = WM.apps.get(appId);
+    if (!app) return;
+
+    // Remove existing icon for this app if present
+    const existing = desktop.querySelector(`.wm-icon[data-app-id="${appId}"]`);
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.className = 'wm-icon';
+    el.dataset.appId = appId;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.innerHTML = `
+        <div class="wm-icon-symbol">${app.symbol}</div>
+        <div class="wm-icon-label">${app.name}</div>
+    `;
+
+    el.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const pt = e.touches ? e.touches[0] : e;
+        WM.iconDragState = {
+            el,
+            startX: pt.clientX,
+            startY: pt.clientY,
+            startLeft: parseInt(el.style.left),
+            startTop: parseInt(el.style.top),
+            moved: false,
+        };
+        document.body.classList.add('wm-dragging');
+    });
+
+    el.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        const pt = e.touches[0];
+        WM.iconDragState = {
+            el,
+            startX: pt.clientX,
+            startY: pt.clientY,
+            startLeft: parseInt(el.style.left),
+            startTop: parseInt(el.style.top),
+            moved: false,
+        };
+        document.body.classList.add('wm-dragging');
+    }, { passive: false });
+
+    el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        launchApp(appId);
+    });
+
+    desktop.appendChild(el);
+}
+
+function wmSelectIcon(el) {
+    if (WM.selectedIcon) WM.selectedIcon.classList.remove('wm-icon-selected');
+    WM.selectedIcon = el;
+    if (el) el.classList.add('wm-icon-selected');
+}
+
+function wmDeselectAllIcons() {
+    if (WM.selectedIcon) {
+        WM.selectedIcon.classList.remove('wm-icon-selected');
+        WM.selectedIcon = null;
+    }
+}
+
+document.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('.wm-icon') && !e.target.closest('.wm-window')) {
+        wmDeselectAllIcons();
+    }
+});
 
 function wmMinimize(winId) {
     const entry = WM.windows.get(winId);
@@ -2163,6 +2284,58 @@ function wmSpawnWelcome() {
         id: 'wm-welcome',
     });
 }
+
+// =============================================
+// BUILT-IN APPS
+// =============================================
+registerApp({
+    id: 'wm-welcome',
+    name: 'WELCOME',
+    symbol: '[&gt;]',
+    launch() {
+        if (WM.windows.has('wm-welcome')) {
+            const e = WM.windows.get('wm-welcome');
+            if (e.minimized) wmRestore('wm-welcome'); else wmFocus('wm-welcome');
+            return;
+        }
+        wmSpawnWelcome();
+    },
+});
+
+registerApp({
+    id: 'app-settings',
+    name: 'SETTINGS',
+    symbol: '[#]',
+    launch() {
+        if (WM.windows.has('app-settings')) {
+            const e = WM.windows.get('app-settings');
+            if (e.minimized) wmRestore('app-settings'); else wmFocus('app-settings');
+            return;
+        }
+        const current = getStoredTheme();
+        const themeButtons = THEMES.map(t => `
+            <button class="wm-settings-theme-btn${t.id === current ? ' active' : ''}" data-theme="${t.id}">
+                <span class="bracket left">[</span>${t.id}<span class="bracket right">]</span>
+                <span class="wm-settings-theme-name">${t.name} — ${t.desc}</span>
+            </button>
+        `).join('');
+        const content = `
+            <div class="wm-section-title">// APPEARANCE</div>
+            <div class="wm-settings-themes">${themeButtons}</div>
+        `;
+        createWindow({ id: 'app-settings', title: 'SETTINGS', content, width: 300, height: 260 });
+        const settingsWin = document.querySelector('.wm-window[data-wm-id="app-settings"]');
+        if (settingsWin) {
+            settingsWin.querySelectorAll('.wm-settings-theme-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyTheme(btn.dataset.theme);
+                    settingsWin.querySelectorAll('.wm-settings-theme-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        }
+    },
+});
 
 //=============================================
 // BOOT
