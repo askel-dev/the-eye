@@ -2356,3 +2356,91 @@ body.wm-dragging {
     color: var(--accent);
     border-color: var(--accent);
 }
+
+/* ── LEADERBOARD APP ──────────────────────────── */
+.lb-loading {
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 8px 0;
+}
+
+.lb-header {
+    display: grid;
+    grid-template-columns: 42px 1fr 44px;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-primary);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+
+.lb-col-count {
+    text-align: right;
+}
+
+.lb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+    max-height: calc(100% - 58px);
+}
+
+.lb-row {
+    display: grid;
+    grid-template-columns: 42px 1fr 44px;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 0;
+    align-items: baseline;
+}
+
+.lb-row-me {
+    color: var(--accent);
+}
+
+.lb-rank {
+    color: var(--text-dim);
+    font-size: 10px;
+}
+
+.lb-row-me .lb-rank {
+    color: var(--accent);
+}
+
+.lb-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lb-count {
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 10px;
+}
+
+.lb-row-me .lb-count {
+    color: var(--accent);
+}
+
+.lb-refresh {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: color 0.12s, border-color 0.12s;
+    flex-shrink: 0;
+}
+
+.lb-refresh:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}

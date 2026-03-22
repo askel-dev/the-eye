@@ -2569,6 +2569,82 @@ WM.apps.set('app-soundboard', {
 });
 
 //=============================================
+// LEADERBOARD APP
+// =============================================
+async function wmSpawnLeaderboard() {
+    createWindow({
+        id: 'app-leaderboard',
+        title: 'LEADERBOARD',
+        content: `<div class="lb-loading">loading...</div>`,
+        width: 280,
+        height: 340,
+    });
+
+    const win = document.querySelector('.wm-window[data-wm-id="app-leaderboard"]');
+    if (!win) return;
+
+    async function loadLeaderboard() {
+        const body = win.querySelector('.wm-body');
+        body.innerHTML = `<div class="lb-loading">loading...</div>`;
+
+        const [dmRes, chRes] = await Promise.all([
+            sb.from('messages').select('sender_id'),
+            sb.from('channel_messages').select('sender_id'),
+        ]);
+
+        const counts = new Map();
+        for (const row of [...(dmRes.data || []), ...(chRes.data || [])]) {
+            counts.set(row.sender_id, (counts.get(row.sender_id) || 0) + 1);
+        }
+
+        const ranked = [...counts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 20);
+
+        const medals = ['[1]', '[2]', '[3]'];
+        const rows = ranked.map(([uid, count], i) => {
+            const user = allUsers.find(u => u.id === uid);
+            const name = user ? escapeHtml(user.username) : uid.slice(0, 8);
+            const rank = medals[i] || `[${i + 1}]`;
+            const isMe = currentUser && uid === currentUser.id;
+            return `<div class="lb-row${isMe ? ' lb-row-me' : ''}">
+                <span class="lb-rank">${rank}</span>
+                <span class="lb-name">${name}</span>
+                <span class="lb-count">${count}</span>
+            </div>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="lb-header">
+                <span class="lb-col-rank">rank</span>
+                <span class="lb-col-name">user</span>
+                <span class="lb-col-count">msgs</span>
+            </div>
+            <div class="lb-list">${rows || '<div class="lb-loading">no data</div>'}</div>
+            <button class="lb-refresh">[↺] refresh</button>
+        `;
+
+        win.querySelector('.lb-refresh').addEventListener('click', loadLeaderboard);
+    }
+
+    await loadLeaderboard();
+}
+
+registerApp({
+    id: 'app-leaderboard',
+    name: 'LEADERBOARD',
+    symbol: '[★]',
+    launch() {
+        if (WM.windows.has('app-leaderboard')) {
+            const e = WM.windows.get('app-leaderboard');
+            if (e.minimized) wmRestore('app-leaderboard'); else wmFocus('app-leaderboard');
+            return;
+        }
+        wmSpawnLeaderboard();
+    },
+});
+
+//=============================================
 // BOOT
 // =============================================
 restoreSession();
