@@ -283,11 +283,21 @@ const COMMANDS = {
     mute:   { usage: '/mute',           description: 'Toggle all sound effects',      handler: cmdMute },
 };
 
+function cmdYase() {
+    const desktop = document.getElementById('wm-desktop');
+    const alreadyVisible = desktop && desktop.querySelector('.wm-icon[data-app-id="app-soundboard"]');
+    if (!alreadyVisible) {
+        createDesktopIcon('app-soundboard', 16, 196);
+    }
+}
+
 async function handleSlashCommand(body) {
     if (!body.startsWith('/')) return false;
     const spaceIdx = body.indexOf(' ');
     const name = (spaceIdx === -1 ? body.slice(1) : body.slice(1, spaceIdx)).toLowerCase();
     const args = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    // Secret commands — not listed in /help
+    if (name === 'yase') { cmdYase(); return true; }
     const cmd = COMMANDS[name];
     if (!cmd) {
         appendSystemMsg('UNKNOWN COMMAND: /' + name + ' — type /help');
@@ -2369,17 +2379,8 @@ registerApp({
                     return;
                 }
 
-                // Update auth email to match new username (keeps login working)
-                const newEmail = newName.toLowerCase() + '@theeye.local';
-                const { error: authError } = await sb.auth.updateUser({ email: newEmail });
-                if (authError) {
-                    // Profile was updated but auth email failed — revert profile to keep them in sync
-                    await sb.from('profiles').update({ username: currentUser.username }).eq('id', currentUser.id);
-                    saveBtn.disabled = false;
-                    msgEl.textContent = 'error updating login — try again';
-                    msgEl.className = 'wm-settings-msg error';
-                    return;
-                }
+                // Update auth user_metadata so restoreSession picks up the new name on next load
+                await sb.auth.updateUser({ data: { username: newName } });
 
                 saveBtn.disabled = false;
                 currentUser.username = newName;
@@ -2393,6 +2394,94 @@ registerApp({
             saveBtn.addEventListener('click', saveUsername);
             usernameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveUsername(); });
         }
+    },
+});
+
+//=============================================
+// SOUNDBOARD APP
+// =============================================
+function wmSpawnSoundboard() {
+    const sounds = [
+        { id: 1,  label: 'AUDIO 01' },
+        { id: 2,  label: 'AUDIO 02' },
+        { id: 3,  label: 'AUDIO 03' },
+        { id: 4,  label: 'AUDIO 04' },
+        { id: 5,  label: 'AUDIO 05' },
+        { id: 6,  label: 'AUDIO 06' },
+        { id: 7,  label: 'AUDIO 07' },
+        { id: 8,  label: 'AUDIO 08' },
+        { id: 9,  label: 'AUDIO 09' },
+        { id: 10, label: 'AUDIO 10' },
+        { id: 11, label: 'AUDIO 11' },
+        { id: 12, label: 'AUDIO 12' },
+    ];
+
+    const buttons = sounds.map(s =>
+        `<button class="sb-btn" data-src="Audios/audio${s.id}.mp3">${s.label}</button>`
+    ).join('');
+
+    const content = `
+        <div class="sb-grid">${buttons}</div>
+        <button class="sb-stop">[■] stop all</button>`;
+
+    createWindow({
+        id: 'app-soundboard',
+        title: 'SOUNDBOARD',
+        content,
+        width: 340,
+        height: 340,
+    });
+
+    const activeAudios = new Map(); // src → Audio
+    const win = document.querySelector('.wm-window[data-wm-id="app-soundboard"]');
+    if (!win) return;
+
+    function stopAll() {
+        activeAudios.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+        activeAudios.clear();
+        win.querySelectorAll('.sb-btn.sb-btn-active').forEach(b => b.classList.remove('sb-btn-active'));
+    }
+
+    win.querySelectorAll('.sb-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const src = btn.dataset.src;
+            if (activeAudios.has(src)) {
+                // toggle off
+                const a = activeAudios.get(src);
+                a.pause();
+                a.currentTime = 0;
+                activeAudios.delete(src);
+                btn.classList.remove('sb-btn-active');
+            } else {
+                const audio = new Audio(src);
+                audio.play();
+                audio.addEventListener('ended', () => {
+                    activeAudios.delete(src);
+                    btn.classList.remove('sb-btn-active');
+                });
+                activeAudios.set(src, audio);
+                btn.classList.add('sb-btn-active');
+            }
+        });
+    });
+
+    win.querySelector('.sb-stop').addEventListener('click', stopAll);
+}
+
+// Soundboard is a secret app — registered silently without a desktop icon.
+// Unlock it by typing /yase in the chat.
+WM.apps.set('app-soundboard', {
+    id: 'app-soundboard',
+    name: 'SOUNDBOARD',
+    symbol: '[♪]',
+    launch() {
+        if (WM.windows.has('app-soundboard')) {
+            const e = WM.windows.get('app-soundboard');
+            if (e.minimized) wmRestore('app-soundboard');
+            else wmFocus('app-soundboard');
+            return;
+        }
+        wmSpawnSoundboard();
     },
 });
 
