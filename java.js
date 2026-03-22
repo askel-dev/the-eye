@@ -2480,7 +2480,8 @@ function wmSpawnSoundboard() {
         const picker = document.createElement('div');
         picker.className = 'sb-picker';
 
-        const targets = [{ label: '#GLOBAL', type: 'channel', id: 'GLOBAL' }];
+        const targets = [];
+        if (currentUser.is_admin) targets.push({ label: '#GLOBAL', type: 'channel', id: 'GLOBAL' });
         allUsers.forEach(u => {
             if (u.id !== currentUser.id && onlineIds.has(u.id)) {
                 targets.push({ label: u.username, type: 'dm', id: u.id });
