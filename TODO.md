@@ -5,4 +5,3 @@ The Eye — ATT GÖRA
 
 längre fram
 - små spel / en ekonomi 
-11

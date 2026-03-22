@@ -584,10 +584,10 @@ function toggleMute() {
     const textSpan = document.getElementById('audio-toggle-text');
     if (!btn || !textSpan) return;
     if (isMuted) {
-        textSpan.textContent = 'AUDIO: OFF';
+        textSpan.textContent = '✗';
         btn.classList.add('muted');
     } else {
-        textSpan.textContent = 'AUDIO: ON';
+        textSpan.textContent = '♪';
         btn.classList.remove('muted');
     }
 }
@@ -742,15 +742,15 @@ function renderContacts() {
     function nameGroup(user, isOnline) {
         const color = getColorHex(user.color_id);
         const lastSeen = isOnline ? '' : `<span class="contact-last-seen">seen ${formatLastSeen(user.last_seen_at)}</span>`;
-        return `<span class="contact-name-group"><span class="contact-name" style="color:${color}">${escapeHtml(user.username)}</span>${lastSeen}</span>`;
+        return `<span class="contact-name-group"><span class="contact-name" data-username="${escapeHtml(user.username)}" style="color:${color}">${escapeHtml(user.username)}</span>${lastSeen}</span>`;
     }
 
-    // Favorites section (only if any)
+    // Pinned section (only shown when there are pinned contacts)
     if (favoriteUsers.length > 0) {
-        const favHeader = document.createElement('div');
-        favHeader.className = 'contact-section-header';
-        favHeader.textContent = `Favorites \u2014 ${favoriteUsers.length}`;
-        list.appendChild(favHeader);
+        const pinnedHeader = document.createElement('div');
+        pinnedHeader.className = 'contact-section-header';
+        pinnedHeader.textContent = `Pinned \u2014 ${favoriteUsers.length}`;
+        list.appendChild(pinnedHeader);
 
         for (const user of favoriteUsers) {
             const isOnline = onlineIds.has(user.id);
@@ -767,40 +767,55 @@ function renderContacts() {
         }
     }
 
-    // Online section header
-    const onlineHeader = document.createElement('div');
-    onlineHeader.className = 'contact-section-header';
-    onlineHeader.textContent = `Online \u2014 ${onlineUsers.length}`;
-    list.appendChild(onlineHeader);
+    // Online section (only shown when there are online contacts)
+    if (onlineUsers.length > 0) {
+        const onlineHeader = document.createElement('div');
+        onlineHeader.className = 'contact-section-header';
+        onlineHeader.textContent = `Online \u2014 ${onlineUsers.length}`;
+        list.appendChild(onlineHeader);
 
-    for (const user of onlineUsers) {
-        const el = document.createElement('div');
-        el.className = 'contact contact-online' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
-        el.dataset.userId = user.id;
-        el.innerHTML =
-            `<span class="status-dot online"></span>` +
-            nameGroup(user, true) +
-            unreadBadge(user.id) +
-            `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
-        list.appendChild(el);
+        for (const user of onlineUsers) {
+            const el = document.createElement('div');
+            el.className = 'contact contact-online' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
+            el.dataset.userId = user.id;
+            el.innerHTML =
+                `<span class="status-dot online"></span>` +
+                nameGroup(user, true) +
+                unreadBadge(user.id) +
+                `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
+            list.appendChild(el);
+        }
     }
 
-    // Offline section header
+    // Offline section header (collapsible, collapsed by default)
+    const offlineCollapsed = window._offlineCollapsed !== false; // default collapsed
     const offlineHeader = document.createElement('div');
-    offlineHeader.className = 'contact-section-header';
-    offlineHeader.textContent = `Offline \u2014 ${offlineUsers.length}`;
+    offlineHeader.className = 'contact-section-header contact-section-collapsible';
+    offlineHeader.dataset.section = 'offline';
+    offlineHeader.innerHTML = `Offline \u2014 ${offlineUsers.length} <span class="section-toggle">${offlineCollapsed ? '[+]' : '[\u2212]'}</span>`;
     list.appendChild(offlineHeader);
 
     for (const user of offlineUsers) {
         const el = document.createElement('div');
         el.className = 'contact contact-offline' + (viewMode === 'dm' && activeContact && activeContact.id === user.id ? ' active' : '');
         el.dataset.userId = user.id;
+        el.dataset.offlineItem = '1';
+        if (offlineCollapsed) el.style.display = 'none';
         el.innerHTML =
             `<span class="status-dot offline"></span>` +
             nameGroup(user, false) +
             unreadBadge(user.id) +
             `<span class="contact-fav" data-fav-id="${user.id}" title="Add to favorites">\u2606</span>`;
         list.appendChild(el);
+    }
+
+    // Empty state hint when no pinned/online and offline is collapsed
+    const offlineCollapsedFinal = window._offlineCollapsed !== false;
+    if (favoriteUsers.length === 0 && onlineUsers.length === 0 && (offlineCollapsedFinal || offlineUsers.length === 0)) {
+        const hint = document.createElement('div');
+        hint.className = 'contact-list-empty-hint';
+        hint.textContent = 'no active conversations';
+        list.appendChild(hint);
     }
 
     // Re-apply filter if active
@@ -887,14 +902,14 @@ function renderSkeleton() {
 }
 
 function formatDateLabel(date) {
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    return months[date.getMonth()] + ' ' + date.getDate();
+    const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+    return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
 }
 
 function insertDateSeparator(feed, date) {
     const el = document.createElement('div');
     el.className = 'date-separator';
-    el.innerHTML = `<span class="date-separator-line"></span><span class="date-separator-label">[ ${formatDateLabel(date)} ]</span><span class="date-separator-line"></span>`;
+    el.innerHTML = `<span class="date-separator-line"></span><span class="date-separator-label">${formatDateLabel(date)}</span><span class="date-separator-line"></span>`;
     feed.appendChild(el);
 }
 
@@ -918,7 +933,7 @@ function renderMessages(messages) {
         if (msg.created_at) {
             const msgDate = new Date(msg.created_at);
             const dayStr = msgDate.toDateString();
-            if (lastDate && lastDate !== dayStr) {
+            if (lastDate === null || lastDate !== dayStr) {
                 insertDateSeparator(feed, msgDate);
             }
             lastDate = dayStr;
@@ -944,12 +959,17 @@ function updateHeader(contact, isOnline) {
     const headerLabel = document.getElementById('chat-with-label');
     headerLabel.innerHTML = `// <span style="color:${contactColor}">${escapeHtml(contact.username)}</span>`;
     const statusLabel = document.getElementById('chat-status-label');
+    const msgInput = document.getElementById('message-input');
     if (isOnline) {
         statusLabel.textContent = '[ONLINE]';
         statusLabel.className = 'online-label';
+        msgInput.placeholder = 'type a message...';
+        msgInput.classList.remove('input-offline');
     } else {
         statusLabel.textContent = `[last seen ${formatLastSeen(contact.last_seen_at)}]`;
         statusLabel.className = 'offline-label';
+        msgInput.placeholder = 'type a message... [offline — will be delivered]';
+        msgInput.classList.add('input-offline');
     }
     const dot = document.getElementById('chat-status-dot');
     dot.className = isOnline ? 'status-dot online-dot' : 'status-dot offline-dot';
@@ -1487,6 +1507,9 @@ async function switchToChannel(channelName) {
     statusLabel.className = 'online-label';
     const dot = document.getElementById('chat-status-dot');
     dot.className = 'status-dot online-dot';
+    const msgInput = document.getElementById('message-input');
+    msgInput.placeholder = 'type a message...';
+    msgInput.classList.remove('input-offline');
 
     closeSidebar();
     await loadChannelMessages(channelName);
@@ -1632,6 +1655,21 @@ document.getElementById('cmd-hints').addEventListener('click', e => {
 
 // Contact clicks (event delegation — contacts are dynamic)
 document.querySelector('.contact-list').addEventListener('click', e => {
+    // Collapsible section header toggle
+    const headerEl = e.target.closest('.contact-section-collapsible');
+    if (headerEl) {
+        const collapsed = window._offlineCollapsed !== false;
+        window._offlineCollapsed = !collapsed;
+        const toggleSpan = headerEl.querySelector('.section-toggle');
+        if (toggleSpan) toggleSpan.textContent = window._offlineCollapsed ? '[+]' : '[\u2212]';
+        let sibling = headerEl.nextElementSibling;
+        while (sibling && !sibling.classList.contains('contact-section-header')) {
+            if (sibling.dataset.offlineItem) sibling.style.display = window._offlineCollapsed ? 'none' : '';
+            sibling = sibling.nextElementSibling;
+        }
+        return;
+    }
+
     // Favorite star toggle
     const favEl = e.target.closest('.contact-fav');
     if (favEl && favEl.dataset.favId) {
@@ -1659,10 +1697,26 @@ function applyContactFilter(query) {
 
     contacts.forEach(el => {
         const nameEl = el.querySelector('.contact-name');
-        const name = nameEl ? nameEl.textContent.toLowerCase() : '';
+        const rawName = nameEl ? (nameEl.dataset.username || nameEl.textContent) : '';
+        const name = rawName.toLowerCase();
         const visible = !q || name.includes(q);
         el.style.display = visible ? '' : 'none';
         if (el.dataset.channel) channelVisible = visible;
+
+        // Highlight matching substring in non-channel contacts
+        if (nameEl && !el.dataset.channel) {
+            if (q && visible) {
+                const idx = name.indexOf(q);
+                if (idx !== -1) {
+                    const before = escapeHtml(rawName.slice(0, idx));
+                    const match  = escapeHtml(rawName.slice(idx, idx + q.length));
+                    const after  = escapeHtml(rawName.slice(idx + q.length));
+                    nameEl.innerHTML = `${before}<mark class="contact-filter-match">${match}</mark>${after}`;
+                }
+            } else {
+                nameEl.textContent = rawName;
+            }
+        }
     });
 
     // Show/hide the separator that sits right after the channel entry
@@ -1704,6 +1758,21 @@ if (contactFilterInput) {
     });
 }
 
+
+// '/' to focus contact search (terminal convention)
+document.addEventListener('keydown', e => {
+    if (e.key !== '/') return;
+    const active = document.activeElement;
+    const filterInput = document.getElementById('contact-filter');
+    const msgInput = document.getElementById('message-input');
+    if (!filterInput) return;
+    if (active === filterInput || active === msgInput) return;
+    // Don't intercept if typing in any other input/textarea
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    e.preventDefault();
+    filterInput.focus();
+    filterInput.select();
+});
 
 // =============================================
 // KEYBOARD SHORTCUTS — Alt+Up/Down to switch contacts
