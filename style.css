@@ -2453,3 +2453,17 @@ body.wm-dragging {
     color: var(--accent);
     border-color: var(--accent);
 }
+
+/* ── DESKTOP SELECTION ───────────────────────── */
+.desktop-selection {
+    position: absolute;
+    border: 1px solid rgba(120, 120, 120, 0.5);
+    background-color: rgba(120, 120, 120, 0.15);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+[data-theme] .desktop-selection {
+    border: 1px solid var(--accent);
+    background-color: var(--accent-glow);
+}

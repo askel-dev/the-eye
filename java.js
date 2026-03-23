@@ -281,6 +281,12 @@ const COMMANDS = {
     color:  { usage: '/color list',     description: 'List or set your identity color', handler: cmdColor },
     theme:  { usage: '/theme list',     description: 'List or set UI color theme',     handler: cmdTheme },
     mute:   { usage: '/mute',           description: 'Toggle all sound effects',      handler: cmdMute },
+    b64:    { usage: '/b64 encode|decode <text>', description: 'Base64 encode or decode text',  handler: cmdB64 },
+    rot13:  { usage: '/rot13 <text>',  description: 'Apply ROT13 cipher to text',    handler: cmdRot13 },
+    hex:    { usage: '/hex encode|decode <text>', description: 'Hex encode or decode text',     handler: cmdHex },
+    hash:   { usage: '/hash <text>',   description: 'SHA-256 hash of text',          handler: cmdHash },
+    ts:     { usage: '/ts',            description: 'Show current timestamp',        handler: cmdTs },
+    dice:   { usage: '/dice <NdM>',    description: 'Roll dice (e.g. 2d6, 1d20)',    handler: cmdDice },
 };
 
 function cmdYase() {
@@ -2648,6 +2654,73 @@ registerApp({
         wmSpawnLeaderboard();
     },
 });
+
+//=============================================
+// DESKTOP SELECTION
+// =============================================
+function initDesktopSelection() {
+    const desktop = document.getElementById('wm-desktop');
+    if (!desktop) return;
+    
+    let isSelecting = false;
+    let startX, startY;
+    let selectionBox = null;
+
+    desktop.addEventListener('mousedown', (e) => {
+        // Only trigger on Left click, and directly on the desktop (not on icons)
+        if (e.button !== 0 || e.target !== desktop) return;
+        
+        isSelecting = true;
+        
+        const rect = desktop.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        selectionBox = document.createElement('div');
+        selectionBox.className = 'desktop-selection';
+        selectionBox.style.left = startX + 'px';
+        selectionBox.style.top = startY + 'px';
+        selectionBox.style.width = '0px';
+        selectionBox.style.height = '0px';
+        
+        desktop.appendChild(selectionBox);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isSelecting || !selectionBox) return;
+        
+        const rect = desktop.getBoundingClientRect();
+        
+        // Constrain to desktop bounds
+        let currentX = e.clientX - rect.left;
+        let currentY = e.clientY - rect.top;
+        
+        currentX = Math.max(0, Math.min(currentX, rect.width));
+        currentY = Math.max(0, Math.min(currentY, rect.height));
+
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+
+        selectionBox.style.left = left + 'px';
+        selectionBox.style.top = top + 'px';
+        selectionBox.style.width = width + 'px';
+        selectionBox.style.height = height + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isSelecting) return;
+        isSelecting = false;
+        
+        if (selectionBox) {
+            selectionBox.remove();
+            selectionBox = null;
+        }
+    });
+}
+
+initDesktopSelection();
 
 //=============================================
 // BOOT
