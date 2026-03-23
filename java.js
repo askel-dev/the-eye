@@ -510,6 +510,87 @@ function cmdHelp() {
     }
 }
 
+/* ── Terminal Utility Commands ─────────────────────────────────── */
+
+function cmdB64(args) {
+    const parts = args.trim().split(/\s+/);
+    const sub = (parts[0] || '').toLowerCase();
+    const text = parts.slice(1).join(' ');
+
+    if (sub === 'encode' && text) {
+        try {
+            const bytes = new TextEncoder().encode(text);
+            const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
+            appendSystemMsg('B64 ENCODE: ' + btoa(binary));
+        } catch { appendSystemMsg('ERROR: COULD NOT ENCODE'); }
+    } else if (sub === 'decode' && text) {
+        try {
+            const binary = atob(text);
+            const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+            appendSystemMsg('B64 DECODE: ' + new TextDecoder().decode(bytes));
+        } catch { appendSystemMsg('ERROR: INVALID BASE64 INPUT'); }
+    } else {
+        appendSystemMsg('USAGE: /b64 encode <text>  or  /b64 decode <base64>');
+    }
+}
+
+function cmdRot13(args) {
+    if (!args.trim()) { appendSystemMsg('USAGE: /rot13 <text>'); return; }
+    const result = args.replace(/[a-zA-Z]/g, c => {
+        const base = c <= 'Z' ? 65 : 97;
+        return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+    });
+    appendSystemMsg('ROT13: ' + result);
+}
+
+function cmdHex(args) {
+    const parts = args.trim().split(/\s+/);
+    const sub = (parts[0] || '').toLowerCase();
+    const text = parts.slice(1).join(' ');
+
+    if (sub === 'encode' && text) {
+        const hex = Array.from(new TextEncoder().encode(text))
+            .map(b => b.toString(16).padStart(2, '0')).join(' ');
+        appendSystemMsg('HEX ENCODE: ' + hex);
+    } else if (sub === 'decode' && text) {
+        try {
+            const bytes = text.replace(/\s+/g, '').match(/.{1,2}/g).map(h => parseInt(h, 16));
+            appendSystemMsg('HEX DECODE: ' + new TextDecoder().decode(new Uint8Array(bytes)));
+        } catch { appendSystemMsg('ERROR: INVALID HEX INPUT'); }
+    } else {
+        appendSystemMsg('USAGE: /hex encode <text>  or  /hex decode <hex bytes>');
+    }
+}
+
+async function cmdHash(args) {
+    if (!args.trim()) { appendSystemMsg('USAGE: /hash <text>'); return; }
+    const data = new TextEncoder().encode(args);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    appendSystemMsg('SHA-256: ' + hashHex);
+}
+
+function cmdTs() {
+    const now = new Date();
+    appendSystemMsg('UNIX: ' + Math.floor(now.getTime() / 1000));
+    appendSystemMsg('ISO:  ' + now.toISOString());
+    appendSystemMsg('UTC:  ' + now.toUTCString());
+}
+
+function cmdDice(args) {
+    const match = args.trim().match(/^(\d+)d(\d+)$/i);
+    if (!match) { appendSystemMsg('USAGE: /dice <NdM> — e.g. 2d6, 1d20, 4d8'); return; }
+    const count = Math.min(parseInt(match[1], 10), 100);
+    const sides = parseInt(match[2], 10);
+    if (count < 1 || sides < 2) { appendSystemMsg('ERROR: NEED AT LEAST 1 DIE WITH 2+ SIDES'); return; }
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    const total = rolls.reduce((a, b) => a + b, 0);
+    appendSystemMsg(`ROLL ${count}d${sides}: [${rolls.join(', ')}] = ${total}`);
+}
+
+/* ── End Terminal Utility Commands ─────────────────────────────── */
+
 function cmdColorList() {
     appendSystemMsg('AVAILABLE IDENTITY COLORS:');
     for (const c of IDENTITY_COLORS) {
@@ -1084,6 +1165,7 @@ async function enterChat(userId, username) {
     document.getElementById('login-view').classList.add('hidden');
     document.getElementById('chat-view').classList.remove('hidden');
     document.body.classList.add('chat-mode');
+    showPlaceholder();
 
     // Populate self-info panel
     const selfUsernameEl = document.getElementById('self-username');
@@ -1104,10 +1186,6 @@ async function enterChat(userId, username) {
     }
     heartbeatLastSeen();
     lastSeenInterval = setInterval(heartbeatLastSeen, 2 * 60 * 1000);
-
-    // Show placeholder until user picks a contact
-    showPlaceholder();
-
 }
 
 async function handleLogout() {
@@ -1503,11 +1581,11 @@ function showPlaceholder() {
     document.getElementById('typing-indicator').classList.add('hidden');
     document.getElementById('new-msg-indicator').classList.add('hidden');
     document.getElementById('cmd-hints').classList.add('hidden');
-    launchApp('wm-welcome');
     // On mobile, auto-open sidebar so user can pick a contact
     if (window.innerWidth <= 600) {
         document.body.classList.add('sidebar-open');
     }
+    layoutDesktopIcons();
 }
 
 function hidePlaceholder() {
@@ -1615,13 +1693,27 @@ if (themesBtnEl) {
     themesBtnEl.addEventListener('click', cmdThemeList);
 }
 
-// Sidebar toggle (mobile)
+// Sidebar toggle
 function closeSidebar() {
     document.body.classList.remove('sidebar-open');
 }
 
+// Collapse button (inside sidebar header) — desktop collapse, mobile close
 document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.body.classList.toggle('sidebar-open');
+    if (window.innerWidth <= 600) {
+        closeSidebar();
+    } else {
+        document.body.classList.add('sidebar-collapsed');
+    }
+});
+
+// Expand button (in chat header) — desktop expand, mobile open
+document.getElementById('sidebar-expand').addEventListener('click', () => {
+    if (window.innerWidth <= 600) {
+        document.body.classList.add('sidebar-open');
+    } else {
+        document.body.classList.remove('sidebar-collapsed');
+    }
 });
 
 document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
@@ -2146,11 +2238,43 @@ document.addEventListener('touchmove', wmOnPointerMove, { passive: false });
 document.addEventListener('touchend', wmOnPointerUp);
 
 // App registry
+const WM_DESKTOP_APPS = [];   // ordered list of app ids for orbital layout
 function registerApp({ id, name, symbol, launch }) {
     WM.apps.set(id, { id, name, symbol, launch });
-    const idx = WM.apps.size - 1;
-    createDesktopIcon(id, 16, 16 + idx * 90);
+    WM_DESKTOP_APPS.push(id);
 }
+
+function layoutDesktopIcons() {
+    const desktop = document.getElementById('wm-desktop');
+    if (!desktop) return;
+    const dRect = desktop.getBoundingClientRect();
+    if (!dRect.width || !dRect.height) return;
+
+    // Center the orbit on the eye logo image
+    const logo = document.querySelector('#chat-placeholder img');
+    let cx, cy;
+    if (logo) {
+        const lRect = logo.getBoundingClientRect();
+        cx = (lRect.left + lRect.width / 2) - dRect.left;
+        cy = (lRect.top + lRect.height / 2) - dRect.top;
+    } else {
+        cx = dRect.width / 2;
+        cy = dRect.height / 2;
+    }
+
+    const radius = Math.min(dRect.width, dRect.height) * 0.32;
+    const count = WM_DESKTOP_APPS.length;
+    const startAngle = -90; // top-center
+
+    WM_DESKTOP_APPS.forEach((id, i) => {
+        const angle = (startAngle + (360 / count) * i) * (Math.PI / 180);
+        const x = cx + radius * Math.cos(angle) - 36;
+        const y = cy + radius * Math.sin(angle) - 30;
+        createDesktopIcon(id, Math.round(x), Math.round(y), i * 80);
+    });
+}
+
+window.addEventListener('resize', layoutDesktopIcons);
 
 function launchApp(id) {
     const app = WM.apps.get(id);
@@ -2164,7 +2288,7 @@ function launchApp(id) {
     app.launch();
 }
 
-function createDesktopIcon(appId, x, y) {
+function createDesktopIcon(appId, x, y, delay) {
     const desktop = document.getElementById('wm-desktop');
     if (!desktop) return;
     const app = WM.apps.get(appId);
@@ -2179,6 +2303,7 @@ function createDesktopIcon(appId, x, y) {
     el.dataset.appId = appId;
     el.style.left = x + 'px';
     el.style.top = y + 'px';
+    if (delay) el.style.animationDelay = delay + 'ms';
     el.innerHTML = `
         <div class="wm-icon-symbol">${app.symbol}</div>
         <div class="wm-icon-label">${app.name}</div>
@@ -2252,6 +2377,7 @@ function wmMinimize(winId) {
     btn.textContent = entry.options.title;
     btn.addEventListener('click', () => wmRestore(winId));
     taskbar.appendChild(btn);
+    wmUpdateMaximizedState();
 }
 
 function wmRestore(winId) {
@@ -2264,6 +2390,16 @@ function wmRestore(winId) {
     const taskbar = document.getElementById('wm-taskbar');
     const btn = taskbar.querySelector(`[data-wm-id="${winId}"]`);
     if (btn) btn.remove();
+    wmUpdateMaximizedState();
+}
+
+function wmUpdateMaximizedState() {
+    const anyMaximized = [...WM.windows.values()].some(w => w.maximized && !w.minimized);
+    const header = document.getElementById('chat-header');
+    if (header) {
+        if (anyMaximized) header.classList.add('wm-hidden');
+        else header.classList.remove('wm-hidden');
+    }
 }
 
 function wmToggleMaximize(winId) {
@@ -2287,6 +2423,7 @@ function wmToggleMaximize(winId) {
         entry.el.classList.add('wm-maximized');
         entry.maximized = true;
     }
+    wmUpdateMaximizedState();
 }
 
 function wmClose(winId) {
@@ -2298,6 +2435,7 @@ function wmClose(winId) {
     const taskbar = document.getElementById('wm-taskbar');
     const btn = taskbar?.querySelector(`[data-wm-id="${winId}"]`);
     if (btn) btn.remove();
+    wmUpdateMaximizedState();
 }
 
 function wmCloseAll() {
@@ -2721,6 +2859,372 @@ function initDesktopSelection() {
 }
 
 initDesktopSelection();
+
+//=============================================
+// TERMINAL APP
+//=============================================
+
+const TERM_BANNER = [
+    '&gt;&gt; THE EYE \u2014 TERMINAL v1.0',
+    '&gt;&gt; type <span class="term-cmd-hint">/help</span> for available commands',
+    '',
+].join('\n');
+
+const TERM_COMMANDS = {
+    help(_state, _args, append) {
+        append('<span class="term-section">// SYSTEM</span>');
+        append('  <span class="term-cmd-hint">/help</span>                show this message');
+        append('  <span class="term-cmd-hint">/clear</span>               clear terminal');
+        append('  <span class="term-cmd-hint">/whoami</span>              display current user');
+        append('  <span class="term-cmd-hint">/date</span>                show current date/time');
+        append('  <span class="term-cmd-hint">/echo [text]</span>         print text');
+        append('  <span class="term-cmd-hint">/contacts</span>            list contacts');
+        append('  <span class="term-cmd-hint">/ver</span>                 show version info');
+        append('<span class="term-section">// SOCIAL</span>');
+        append('  <span class="term-cmd-hint">/who</span>                 show online users');
+        append('  <span class="term-cmd-hint">/top</span>                 show message leaderboard');
+        append('<span class="term-section">// IDENTITY</span>');
+        append('  <span class="term-cmd-hint">/color list</span>          list identity colors');
+        append('  <span class="term-cmd-hint">/color set [n]</span>       set your identity color');
+        append('  <span class="term-cmd-hint">/theme list</span>          list UI themes');
+        append('  <span class="term-cmd-hint">/theme set [name]</span>    set UI theme');
+        append('<span class="term-section">// AUDIO</span>');
+        append('  <span class="term-cmd-hint">/mute</span>                toggle sound effects');
+        append('<span class="term-section">// TOOLS</span>');
+        append('  <span class="term-cmd-hint">/b64 encode|decode [t]</span>  base64 encode/decode');
+        append('  <span class="term-cmd-hint">/rot13 [text]</span>        ROT13 cipher');
+        append('  <span class="term-cmd-hint">/hex encode|decode [t]</span>  hex encode/decode');
+        append('  <span class="term-cmd-hint">/hash [text]</span>         SHA-256 hash');
+        append('  <span class="term-cmd-hint">/ts</span>                  show current timestamp');
+        append('  <span class="term-cmd-hint">/dice [NdM]</span>          roll dice (e.g. 2d6)');
+    },
+    whoami(_state, _args, append) {
+        const u = currentUser;
+        if (!u) { append('not logged in'); return; }
+        append('<span class="term-val">' + escapeHtml(u.username) + '</span>  [' + escapeHtml(u.id.slice(0, 8)) + '...]');
+    },
+    date(_state, _args, append) {
+        append(new Date().toString());
+    },
+    echo(_state, args, append) {
+        append(escapeHtml(args.join(' ')));
+    },
+    contacts(_state, _args, append) {
+        if (!allUsers || allUsers.length === 0) { append('no contacts loaded'); return; }
+        const lines = allUsers
+            .filter(u => currentUser && u.id !== currentUser.id)
+            .map(u => {
+                const online = onlineIds && onlineIds.has(u.id);
+                const dot = online ? '<span class="term-online">\u25cf</span>' : '<span class="term-offline">\u25cb</span>';
+                return '  ' + dot + ' ' + escapeHtml(u.username);
+            });
+        if (lines.length) lines.forEach(l => append(l)); else append('no contacts');
+    },
+    ver(_state, _args, append) {
+        append('the eye  <span class="term-val">1.0.0</span>');
+        append('platform <span class="term-val">web</span>');
+    },
+    clear(state) {
+        state._lines = [];
+        return null;
+    },
+    who(_state, _args, append) {
+        const online = allUsers.filter(u => onlineIds.has(u.id));
+        if (online.length === 0) {
+            append('NO USERS ONLINE');
+        } else {
+            const names = online.map(u => u.username).sort().join(', ');
+            append('ONLINE (' + online.length + '): ' + names);
+        }
+    },
+    async top(_state, _args, append) {
+        append('GLOBAL COMM METRICS: MESSAGES SENT');
+        const { data, error } = await sb.rpc('get_message_counts');
+        if (error || !data || data.length === 0) {
+            append('NO DATA AVAILABLE');
+            return;
+        }
+        const top = data.slice(0, 10);
+        const maxCount = top[0].total_count;
+        const BAR_WIDTH = 20;
+        const maxName = Math.max(...top.map(r => {
+            const u = allUsers.find(u => u.id === r.sender_id);
+            return (u ? u.username : 'unknown').length;
+        }));
+        const maxDigits = maxCount.toLocaleString().length;
+        top.forEach((row, i) => {
+            const user = allUsers.find(u => u.id === row.sender_id);
+            const name = user ? user.username : 'unknown';
+            const color = getColorHex(user ? user.color_id : 1);
+            const filled = Math.max(1, Math.round((row.total_count / maxCount) * BAR_WIDTH));
+            const empty = BAR_WIDTH - filled;
+            const bar = '\u2593'.repeat(filled) + '\u2591'.repeat(empty);
+            const rank = `[${i + 1}]`.padEnd(4);
+            const paddedName = name.padEnd(maxName);
+            const count = row.total_count.toLocaleString().padStart(maxDigits);
+            const nameHtml = `<span style="color:${color};font-style:normal">${paddedName}</span>`;
+            append(`${rank} ${nameHtml} ${bar} ${count}`);
+        });
+    },
+    color(_state, args, append) {
+        const parts = args.join(' ').trim().toLowerCase().split(/\s+/);
+        const sub = parts[0];
+
+        if (!sub || sub === 'list') {
+            append('AVAILABLE IDENTITY COLORS:');
+            for (const c of IDENTITY_COLORS) {
+                const num = String(c.id).padStart(1, ' ');
+                append(`  [ ${num} ] <span style="color:${c.hex};font-style:normal">\u2588\u2588</span> ${c.name}`);
+            }
+            append('  &gt; Type /color set [number] to apply');
+            return;
+        }
+
+        if (sub === 'set') {
+            const num = parseInt(parts[1], 10);
+            if (isNaN(num) || num < 1 || num > IDENTITY_COLORS.length) {
+                append(`USAGE: /color set [1-${IDENTITY_COLORS.length}]`);
+                return;
+            }
+            const chosen = IDENTITY_COLORS.find(c => c.id === num);
+            // Async — fire and forget, result appended when done
+            (async () => {
+                const { error } = await sb.from('profiles').update({ color_id: num }).eq('id', currentUser.id);
+                if (error) {
+                    append('ERROR: COULD NOT SET COLOR');
+                    return;
+                }
+                currentUser.color_id = num;
+                const selfEl = document.getElementById('self-username');
+                if (selfEl) selfEl.style.color = chosen.hex;
+                recolorRenderedMessages(currentUser.id);
+                append(`COLOR SET: ${chosen.name}`);
+            })();
+            return;
+        }
+
+        append(`USAGE: /color list  OR  /color set [1-${IDENTITY_COLORS.length}]`);
+    },
+    theme(_state, args, append) {
+        const parts = args.join(' ').trim().toLowerCase().split(/\s+/);
+        const sub = parts[0];
+
+        if (!sub || sub === 'list') {
+            const current = getStoredTheme();
+            append('AVAILABLE THEMES:');
+            for (const t of THEMES) {
+                const marker = t.id === current ? ' \u2190' : '';
+                append(`  [ ${t.id} ] ${t.name} \u2014 ${t.desc}${marker}`);
+            }
+            append('  &gt; Type /theme set &lt;name&gt; to apply');
+            return;
+        }
+
+        if (sub === 'set') {
+            const id = parts[1];
+            const theme = THEMES.find(t => t.id === id);
+            if (!theme) {
+                append(`UNKNOWN THEME: ${id || '(none)'}`);
+                return;
+            }
+            applyTheme(theme.id);
+            append(`THEME SET: ${theme.name}`);
+            return;
+        }
+
+        append('USAGE: /theme list  OR  /theme set &lt;name&gt;');
+    },
+    mute(_state, _args, append) {
+        toggleMute();
+        append(isMuted ? 'AUDIO MUTED' : 'AUDIO UNMUTED');
+    },
+    haunt(_state, _args, append) {
+        isHaunting = !isHaunting;
+        if (isHaunting) {
+            if (presenceChannel) presenceChannel.untrack();
+            append('HAUNT MODE ACTIVE \u2014 YOU ARE A GHOST');
+            append('  your presence is hidden. use /whisper to leave traces.');
+            document.getElementById('haunt-status')?.classList.remove('hidden');
+        } else {
+            if (presenceChannel) {
+                presenceChannel.track({ online_at: new Date().toISOString() });
+            }
+            append('HAUNT MODE DISABLED \u2014 YOU ARE VISIBLE AGAIN');
+            document.getElementById('haunt-status')?.classList.add('hidden');
+        }
+    },
+    b64(_state, args, append) {
+        const sub = (args[0] || '').toLowerCase();
+        const text = args.slice(1).join(' ');
+
+        if (sub === 'encode' && text) {
+            try {
+                const bytes = new TextEncoder().encode(text);
+                const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
+                append('B64 ENCODE: ' + btoa(binary));
+            } catch { append('ERROR: COULD NOT ENCODE'); }
+        } else if (sub === 'decode' && text) {
+            try {
+                const binary = atob(text);
+                const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+                append('B64 DECODE: ' + new TextDecoder().decode(bytes));
+            } catch { append('ERROR: INVALID BASE64 INPUT'); }
+        } else {
+            append('USAGE: /b64 encode &lt;text&gt;  or  /b64 decode &lt;base64&gt;');
+        }
+    },
+    rot13(_state, args, append) {
+        const text = args.join(' ');
+        if (!text.trim()) { append('USAGE: /rot13 &lt;text&gt;'); return; }
+        const result = text.replace(/[a-zA-Z]/g, c => {
+            const base = c <= 'Z' ? 65 : 97;
+            return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+        });
+        append('ROT13: ' + escapeHtml(result));
+    },
+    hex(_state, args, append) {
+        const sub = (args[0] || '').toLowerCase();
+        const text = args.slice(1).join(' ');
+
+        if (sub === 'encode' && text) {
+            const hex = Array.from(new TextEncoder().encode(text))
+                .map(b => b.toString(16).padStart(2, '0')).join(' ');
+            append('HEX ENCODE: ' + hex);
+        } else if (sub === 'decode' && text) {
+            try {
+                const bytes = text.replace(/\s+/g, '').match(/.{1,2}/g).map(h => parseInt(h, 16));
+                append('HEX DECODE: ' + new TextDecoder().decode(new Uint8Array(bytes)));
+            } catch { append('ERROR: INVALID HEX INPUT'); }
+        } else {
+            append('USAGE: /hex encode &lt;text&gt;  or  /hex decode &lt;hex bytes&gt;');
+        }
+    },
+    async hash(_state, args, append) {
+        const text = args.join(' ');
+        if (!text.trim()) { append('USAGE: /hash &lt;text&gt;'); return; }
+        const data = new TextEncoder().encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashHex = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+        append('SHA-256: ' + hashHex);
+    },
+    ts(_state, _args, append) {
+        const now = new Date();
+        append('UNIX: ' + Math.floor(now.getTime() / 1000));
+        append('ISO:  ' + now.toISOString());
+        append('UTC:  ' + now.toUTCString());
+    },
+    dice(_state, args, append) {
+        const match = args.join(' ').trim().match(/^(\d+)d(\d+)$/i);
+        if (!match) { append('USAGE: /dice &lt;NdM&gt; \u2014 e.g. 2d6, 1d20, 4d8'); return; }
+        const count = Math.min(parseInt(match[1], 10), 100);
+        const sides = parseInt(match[2], 10);
+        if (count < 1 || sides < 2) { append('ERROR: NEED AT LEAST 1 DIE WITH 2+ SIDES'); return; }
+        const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+        const total = rolls.reduce((a, b) => a + b, 0);
+        append(`ROLL ${count}d${sides}: [${rolls.join(', ')}] = ${total}`);
+    },
+};
+
+function wmSpawnTerminal() {
+    createWindow({
+        id: 'app-terminal',
+        title: 'TERMINAL',
+        width: 480,
+        height: 320,
+    });
+    const win = document.querySelector('.wm-window[data-wm-id="app-terminal"]');
+    if (!win) return;
+
+    const body = win.querySelector('.wm-body');
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.innerHTML = `
+        <div class="term-output"></div>
+        <div class="term-input-row">
+            <span class="term-prompt">&gt;</span>
+            <input class="term-input" type="text" spellcheck="false" autocomplete="off" />
+        </div>
+    `;
+
+    const output = body.querySelector('.term-output');
+    const input = body.querySelector('.term-input');
+    const state = { _lines: [], _history: [], _histIdx: -1 };
+
+    function appendLines(html) {
+        if (html === null) return;
+        if (html !== undefined && html !== '') state._lines.push(html);
+        output.innerHTML = state._lines.join('\n');
+        output.scrollTop = output.scrollHeight;
+    }
+
+    appendLines(TERM_BANNER);
+
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (state._history.length && state._histIdx < state._history.length - 1) {
+                state._histIdx++;
+                input.value = state._history[state._history.length - 1 - state._histIdx];
+            }
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (state._histIdx > 0) {
+                state._histIdx--;
+                input.value = state._history[state._history.length - 1 - state._histIdx];
+            } else {
+                state._histIdx = -1;
+                input.value = '';
+            }
+            return;
+        }
+        if (e.key !== 'Enter') return;
+
+        const raw = input.value.trim();
+        input.value = '';
+        state._histIdx = -1;
+        if (!raw) return;
+        state._history.push(raw);
+
+        appendLines('<span class="term-prompt-echo">&gt;</span> ' + escapeHtml(raw));
+
+        // Strip leading / so both "/help" and "help" work
+        const normalized = raw.startsWith('/') ? raw.slice(1) : raw;
+        const parts = normalized.split(/\s+/);
+        const cmd = parts[0].toLowerCase();
+        const args = parts.slice(1);
+
+        if (TERM_COMMANDS[cmd]) {
+            const result = await TERM_COMMANDS[cmd](state, args, appendLines);
+            if (result === null) {
+                output.innerHTML = '';
+            }
+        } else {
+            appendLines('<span class="term-err">command not found: /' + escapeHtml(cmd) + ' \u2014 type /help</span>');
+        }
+        appendLines('');
+    });
+
+    body.addEventListener('mousedown', () => setTimeout(() => input.focus(), 0));
+    input.focus();
+}
+
+registerApp({
+    id: 'app-terminal',
+    name: 'TERMINAL',
+    symbol: '[&gt;_]',
+    launch() {
+        if (WM.windows.has('app-terminal')) {
+            const e = WM.windows.get('app-terminal');
+            if (e.minimized) wmRestore('app-terminal'); else wmFocus('app-terminal');
+            return;
+        }
+        wmSpawnTerminal();
+    },
+});
 
 //=============================================
 // BOOT

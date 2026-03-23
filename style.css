@@ -458,6 +458,15 @@ h1 {
     flex-direction: column;
     overflow: hidden;
     flex-shrink: 0;
+    transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+@media (min-width: 601px) {
+    body.sidebar-collapsed #chat-sidebar {
+        width: 0;
+        min-width: 0;
+        border-right: none;
+    }
 }
 
 .sidebar-header {
@@ -892,8 +901,12 @@ h1 {
 }
 #chat-placeholder.hidden { display: none !important; }
 #chat-placeholder img {
+    position: absolute;
+    right: 50vw;
+    top: 50%;
+    transform: translate(50%, -50%);
     opacity: 0.06;
-    width: 40%;
+    width: 40vw;
     max-width: 300px;
     filter: var(--logo-filter);
     user-select: none;
@@ -1342,22 +1355,22 @@ h1 {
     transform: translateX(3px);
 }
 
-/* === Sidebar Toggle Button (hidden on desktop) === */
+/* === Sidebar Toggle Button (inside sidebar header) === */
 #sidebar-toggle {
-    display: none;
+    margin-left: auto;
     background: none;
     border: none;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
-    font-size: 14px;
-    color: var(--text-self-username);
+    font-size: 11px;
+    color: var(--text-sidebar-btn);
     cursor: pointer;
-    padding: 4px 0;
+    padding: 2px 0;
     flex-shrink: 0;
     transition: color 0.15s;
 }
 
 #sidebar-toggle:hover {
-    color: var(--text-bright);
+    color: var(--text-sidebar-btn-hover);
 }
 
 #sidebar-toggle .bracket {
@@ -1373,6 +1386,69 @@ h1 {
     transform: translateX(3px);
 }
 
+/* === Sidebar Expand Button (chat header, shown only when sidebar collapsed) === */
+#sidebar-expand {
+    display: none;
+    background: none;
+    border: none;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--text-self-username);
+    cursor: pointer;
+    padding: 4px 0;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+#sidebar-expand:hover {
+    color: var(--text-bright);
+}
+
+#sidebar-expand .bracket {
+    display: inline-block;
+    transition: transform 0.15s;
+}
+
+#sidebar-expand:hover .bracket.left {
+    transform: translateX(-3px);
+}
+
+#sidebar-expand:hover .bracket.right {
+    transform: translateX(3px);
+}
+
+@media (min-width: 601px) {
+    body.sidebar-collapsed #sidebar-expand {
+        display: flex;
+        align-items: center;
+    }
+
+    /* Keep header visible when sidebar is collapsed so expand button is reachable,
+       but overlay it so it doesn't push content down */
+    body.sidebar-collapsed #chat-header.hidden {
+        display: flex !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        border-bottom: none;
+        background: transparent;
+        pointer-events: none;
+    }
+
+    body.sidebar-collapsed #chat-header.hidden #sidebar-expand {
+        pointer-events: auto;
+    }
+
+    /* Hide chat label/status when sidebar is collapsed and no chat is open */
+    body.sidebar-collapsed #chat-header.hidden #chat-with-label,
+    body.sidebar-collapsed #chat-header.hidden #chat-status-dot,
+    body.sidebar-collapsed #chat-header.hidden #chat-status-label,
+    body.sidebar-collapsed #chat-header.hidden #close-chat-btn {
+        display: none;
+    }
+}
+
 /* === Sidebar Backdrop (hidden by default) === */
 #sidebar-backdrop {
     display: none;
@@ -1381,8 +1457,8 @@ h1 {
 /* === Mobile Responsive (≤ 600px) === */
 @media (max-width: 600px) {
 
-    /* Show toggle button — large tap target */
-    #sidebar-toggle {
+    /* Show expand button in chat header as the open trigger on mobile */
+    #sidebar-expand {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1532,7 +1608,9 @@ h1 {
 
 #wm-desktop {
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    width: 100vw;
     bottom: 28px;
     z-index: 1;
 }
@@ -1679,6 +1757,10 @@ h1 {
     border-bottom: 2px solid var(--border-primary);
 }
 
+#chat-header.wm-hidden {
+    display: none;
+}
+
 .wm-window.wm-maximized {
     left: 0 !important;
     top: 0 !important;
@@ -1786,6 +1868,12 @@ body.wm-dragging {
     width: 72px;
     padding: 6px;
     z-index: 1;
+    animation: wm-icon-in 0.4s ease both;
+}
+
+@keyframes wm-icon-in {
+    from { opacity: 0; transform: scale(0.8) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .wm-icon-symbol {
@@ -2467,3 +2555,61 @@ body.wm-dragging {
     border: 1px solid var(--accent);
     background-color: var(--accent-glow);
 }
+
+/* =============================================
+   TERMINAL APP
+   ============================================= */
+.wm-window[data-wm-id="app-terminal"] .wm-body {
+    overflow: hidden;
+}
+
+.term-output {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 4px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.term-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 8px;
+    border-top: 1px solid var(--border-primary);
+    flex-shrink: 0;
+}
+
+.term-prompt {
+    color: var(--accent);
+    font-size: 12px;
+    user-select: none;
+}
+
+.term-prompt-echo {
+    color: var(--accent);
+    opacity: 0.6;
+}
+
+.term-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 12px;
+    caret-color: var(--accent);
+}
+
+.term-cmd-hint { color: var(--accent); }
+.term-section { opacity: 0.5; }
+.term-val { color: var(--accent); }
+.term-err { color: #e05; }
+.term-online { color: #4c4; }
+.term-offline { opacity: 0.35; }
