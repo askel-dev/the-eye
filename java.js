@@ -2597,6 +2597,9 @@ function wmSpawnSoundboard() {
         { id: 10, label: 'AUDIO 10' },
         { id: 11, label: 'AUDIO 11' },
         { id: 12, label: 'AUDIO 12' },
+        { id: 13, label: 'AUDIO 13' },
+        { id: 14, label: 'AUDIO 14' },
+        { id: 15, label: 'AUDIO 15' },
     ];
 
     const buttons = sounds.map(s =>
@@ -3061,13 +3064,15 @@ const TERM_COMMANDS = {
             try {
                 const bytes = new TextEncoder().encode(text);
                 const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
-                append('B64 ENCODE: ' + btoa(binary));
+                const encoded = btoa(binary);
+                append('B64 ENCODE: ' + encoded + ' <button class="term-copy-btn" data-copy="' + escapeHtml(encoded) + '">COPY</button>');
             } catch { append('ERROR: COULD NOT ENCODE'); }
         } else if (sub === 'decode' && text) {
             try {
                 const binary = atob(text);
                 const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-                append('B64 DECODE: ' + new TextDecoder().decode(bytes));
+                const decoded = new TextDecoder().decode(bytes);
+                append('B64 DECODE: ' + escapeHtml(decoded) + ' <button class="term-copy-btn" data-copy="' + escapeHtml(decoded) + '">COPY</button>');
             } catch { append('ERROR: INVALID BASE64 INPUT'); }
         } else {
             append('USAGE: /b64 encode &lt;text&gt;  or  /b64 decode &lt;base64&gt;');
@@ -3080,7 +3085,7 @@ const TERM_COMMANDS = {
             const base = c <= 'Z' ? 65 : 97;
             return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
         });
-        append('ROT13: ' + escapeHtml(result));
+        append('ROT13: ' + escapeHtml(result) + ' <button class="term-copy-btn" data-copy="' + escapeHtml(result) + '">COPY</button>');
     },
     hex(_state, args, append) {
         const sub = (args[0] || '').toLowerCase();
@@ -3089,11 +3094,12 @@ const TERM_COMMANDS = {
         if (sub === 'encode' && text) {
             const hex = Array.from(new TextEncoder().encode(text))
                 .map(b => b.toString(16).padStart(2, '0')).join(' ');
-            append('HEX ENCODE: ' + hex);
+            append('HEX ENCODE: ' + hex + ' <button class="term-copy-btn" data-copy="' + escapeHtml(hex) + '">COPY</button>');
         } else if (sub === 'decode' && text) {
             try {
                 const bytes = text.replace(/\s+/g, '').match(/.{1,2}/g).map(h => parseInt(h, 16));
-                append('HEX DECODE: ' + new TextDecoder().decode(new Uint8Array(bytes)));
+                const decoded = new TextDecoder().decode(new Uint8Array(bytes));
+                append('HEX DECODE: ' + escapeHtml(decoded) + ' <button class="term-copy-btn" data-copy="' + escapeHtml(decoded) + '">COPY</button>');
             } catch { append('ERROR: INVALID HEX INPUT'); }
         } else {
             append('USAGE: /hex encode &lt;text&gt;  or  /hex decode &lt;hex bytes&gt;');
@@ -3106,7 +3112,7 @@ const TERM_COMMANDS = {
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashHex = Array.from(new Uint8Array(hashBuffer))
             .map(b => b.toString(16).padStart(2, '0')).join('');
-        append('SHA-256: ' + hashHex);
+        append('SHA-256: ' + hashHex + ' <button class="term-copy-btn" data-copy="' + hashHex + '">COPY</button>');
     },
     ts(_state, _args, append) {
         const now = new Date();
@@ -3160,6 +3166,16 @@ function wmSpawnTerminal() {
     }
 
     appendLines(TERM_BANNER);
+
+    output.addEventListener('click', e => {
+        const btn = e.target.closest('.term-copy-btn');
+        if (!btn) return;
+        navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+            const prev = btn.textContent;
+            btn.textContent = 'COPIED';
+            setTimeout(() => btn.textContent = prev, 1500);
+        });
+    });
 
     input.addEventListener('keydown', async (e) => {
         if (e.key === 'ArrowUp') {

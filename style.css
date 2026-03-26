@@ -2613,3 +2613,18 @@ body.wm-dragging {
 .term-err { color: #e05; }
 .term-online { color: #4c4; }
 .term-offline { opacity: 0.35; }
+.term-copy-btn {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 6px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 10px;
+    line-height: 1.6;
+    cursor: pointer;
+    opacity: 0.6;
+    vertical-align: middle;
+}
+.term-copy-btn:hover { opacity: 1; }
