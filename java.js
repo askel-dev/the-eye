@@ -293,7 +293,11 @@ function cmdYase() {
     const desktop = document.getElementById('wm-desktop');
     const alreadyVisible = desktop && desktop.querySelector('.wm-icon[data-app-id="app-soundboard"]');
     if (!alreadyVisible) {
-        createDesktopIcon('app-soundboard', 16, 196);
+        // Add soundboard to the desktop app layout so it persists across relayouts
+        if (!WM_DESKTOP_APPS.includes('app-soundboard')) {
+            WM_DESKTOP_APPS.push('app-soundboard');
+        }
+        layoutDesktopIcons();
     }
 }
 
@@ -303,7 +307,7 @@ async function handleSlashCommand(body) {
     const name = (spaceIdx === -1 ? body.slice(1) : body.slice(1, spaceIdx)).toLowerCase();
     const args = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
     // Secret commands — not listed in /help
-    if (name === 'yase') { cmdYase(); return true; }
+    if (name === 'yase') { cmdYase(); appendSystemMsg('SOUNDBOARD UNLOCKED — check the desktop.'); return true; }
     const cmd = COMMANDS[name];
     if (!cmd) {
         appendSystemMsg('UNKNOWN COMMAND: /' + name + ' — type /help');
@@ -3129,6 +3133,10 @@ const TERM_COMMANDS = {
         const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
         const total = rolls.reduce((a, b) => a + b, 0);
         append(`ROLL ${count}d${sides}: [${rolls.join(', ')}] = ${total}`);
+    },
+    yase(_state, _args, append) {
+        cmdYase();
+        append('SOUNDBOARD UNLOCKED \u2014 check the desktop.');
     },
 };
 
