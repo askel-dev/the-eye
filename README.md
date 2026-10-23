@@ -1,5 +1,9 @@
 # The Eye
 
+**Closed on October 23, 2026.** The Supabase project is gone. The site now shows a memorial and a
+read-only archive of `#GLOBAL` (`index.html`, `archive.js`, `archive.css`, `archive/global.json`, made by
+`tools/snapshot.mjs`). The live chat below (`java.js`) is kept as it was but no longer loaded.
+
 A realtime, Supabase-backed web chat built with plain HTML/CSS/JS. Includes:
 - 1-to-1 DMs (stored in `public.messages`)
 - A public `#GLOBAL` channel (stored in `public.channel_messages`)

@@ -1,0 +1,126 @@
+/* === The memorial (The Eye closed 23.10.2026) === */
+
+/* The eye blinks once, then closes for good: a line between THE and EYE. */
+.logo.closing {
+    transform-origin: 50% 55%;
+    animation: eye-close 3.2s cubic-bezier(0.7, 0, 0.3, 1) both 0.9s;
+}
+
+@keyframes eye-close {
+    0%   { transform: scaleY(1); opacity: 1; }
+    8%   { transform: scaleY(0.05); }
+    16%  { transform: scaleY(1); }
+    45%  { transform: scaleY(1); opacity: 1; }
+    100% { transform: scaleY(0.04); opacity: 0.55; }
+}
+
+#rip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 440px;
+    width: 100%;
+}
+
+.rip-line {
+    animation: emerge-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rip-terminated {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--color-error);
+    animation-delay: 3.4s;
+}
+
+.rip-dates {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+    font-family: "Cinzel", serif;
+    font-size: 17px;
+    letter-spacing: 0.16em;
+    color: var(--text-bright);
+    animation-delay: 3.7s;
+}
+
+.rip-dash {
+    width: 46px;
+    height: 1px;
+    background: var(--border-input-focus);
+}
+
+.rip-words {
+    margin: 26px 0 0;
+    font-family: "EB Garamond", serif;
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    animation-delay: 4.0s;
+}
+
+.rip-stats {
+    margin-top: 20px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    animation-delay: 4.3s;
+}
+
+#enter-archive {
+    margin-top: 30px;
+    padding: 12px 8px;
+    min-height: 44px;
+    font-size: 14px;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    letter-spacing: 0.2em;
+    background: none;
+    color: var(--color-login-btn);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    animation-delay: 4.6s;
+}
+
+#enter-archive .bracket { display: inline-block; transition: transform 0.15s linear; }
+#enter-archive:hover, #enter-archive:focus-visible { color: var(--text-white); }
+#enter-archive:hover .bracket.left { transform: translateX(-4px); }
+#enter-archive:hover .bracket.right { transform: translateX(4px); }
+#enter-archive .cursor { opacity: 0; }
+#enter-archive:hover .cursor { opacity: 1; animation: terminal-blink 0.6s steps(2, start) infinite; }
+
+.rip-foot {
+    margin-top: 34px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-dimmer);
+    font-style: italic;
+    animation-delay: 5.2s;
+}
+
+/* === The archive === */
+.archive #chat-main { height: 100vh; height: 100dvh; }
+.archive .message .msg-lock-btn { display: none; }
+.archive .archive-end { margin-top: 18px; }
+
+.archive-input { padding-bottom: max(13px, env(safe-area-inset-bottom)); }
+
+.archive-closed {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 480px) {
+    .rip-words { font-size: 17px; padding: 0 6px; }
+    #close-chat-btn { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .logo.closing { animation: none; transform: scaleY(0.04); opacity: 0.55; }
+    .rip-line { animation: none; }
+}
